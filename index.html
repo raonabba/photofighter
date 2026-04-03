@@ -3,95 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>THE KING OF IT - COMPLIANCE 2026</title>
+    <title>THE KING OF IT 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap');
-        :root { --bg: #0f172a; --p1-neon: #0ea5e9; --p2-neon: #f43f5e; }
-        body { font-family: 'Jua', sans-serif; background: var(--bg); color: white; margin: 0; overflow: hidden; height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        :root { --p1: #0ea5e9; --p2: #f43f5e; --panel: #1e293b; }
+        body { 
+            font-family: 'Jua', sans-serif; background: #020617; color: white; 
+            margin: 0; padding: 0; overflow: hidden; height: 100dvh;
+            display: flex; flex-direction: column; align-items: center;
+        }
 
-        /* 메인 프레임 */
-        .game-container { width: 100%; max-width: 1100px; height: 100%; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        /* 메인 프레임: 화면 전체 비율 유지 */
+        .game-wrapper {
+            width: 95%; max-width: 1000px; height: 100%;
+            display: flex; flex-direction: column;
+            padding: 20px 0; box-sizing: border-box;
+        }
+
+        /* 아레나 박스 (16:9 비율 유지하며 절대 안 잘림) */
+        .arena-outer {
+            position: relative; width: 100%; aspect-ratio: 16 / 9;
+            background: #334155; border: 8px solid #475569; border-radius: 15px;
+            overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.7);
+        }
         
-        /* 아레나 박스 (이미지 디자인 재현) */
-        .arena-border { position: relative; width: 100%; aspect-ratio: 16/9; background: #334155; border: 10px solid #475569; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.9); }
-        .arena-inner { position: absolute; inset: 5px; background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); border-radius: 10px; overflow: hidden; }
-        
-        /* 바닥 격자 */
-        .floor { position: absolute; bottom: 0; width: 100%; height: 35%; background: #1e293b; border-top: 2px solid var(--p1-neon); transform: perspective(500px) rotateX(60deg); transform-origin: top; background-image: linear-gradient(var(--p1-neon) 1px, transparent 1px), linear-gradient(90deg, var(--p1-neon) 1px, transparent 1px); background-size: 50px 50px; opacity: 0.3; }
+        canvas { width: 100%; height: 100%; display: block; }
 
-        /* UI 요소 */
-        .hp-system { position: absolute; top: 20px; width: 100%; display: flex; justify-content: center; align-items: center; gap: 15px; padding: 0 40px; z-index: 50; }
-        .hp-outer { flex: 1; height: 30px; background: #450a0a; border: 3px solid #fff; transform: skew(-20deg); overflow: hidden; box-shadow: 0 0 15px rgba(255,0,0,0.3); }
-        .hp-inner { height: 100%; background: linear-gradient(90deg, #fbbf24, #ef4444); transition: width 0.3s; }
-        .fight-label { background: linear-gradient(180deg, #fbbf24, #d97706); padding: 5px 25px; border-radius: 10px; font-family: 'Black Han Sans'; font-size: 1.8rem; border: 3px solid #fff; color: #450a0a; }
+        /* 체력바 레이아웃 */
+        .ui-overlay {
+            position: absolute; top: 15px; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            gap: 10px; padding: 0 5%; pointer-events: none;
+        }
+        .hp-bar { flex: 1; height: 25px; background: #450a0a; border: 2px solid #fff; transform: skew(-15deg); overflow: hidden; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #ef4444); transition: width 0.3s; }
+        .fight-btn-top {
+            background: linear-gradient(180deg, #fbbf24, #d97706);
+            padding: 5px 20px; border-radius: 8px; border: 2px solid #fff;
+            font-family: 'Black Han Sans'; font-size: 1.5rem; color: #450a0a;
+            cursor: pointer; pointer-events: auto;
+        }
 
-        /* 컨트롤 패널 */
-        .control-panel { margin-top: 20px; background: #1e293b; border: 4px solid #475569; border-radius: 15px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .p-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .neon-btn { padding: 10px; border-radius: 10px; font-weight: bold; text-transform: uppercase; border: 2px solid transparent; transition: 0.2s; font-size: 0.9rem; }
-        .btn-p1 { border-color: var(--p1-neon); color: var(--p1-neon); box-shadow: inset 0 0 10px var(--p1-neon); }
-        .btn-p2 { border-color: var(--p2-neon); color: var(--p2-neon); box-shadow: inset 0 0 10px var(--p2-neon); }
-        .btn-p1:active { background: var(--p1-neon); color: white; }
-        .btn-p2:active { background: var(--p2-neon); color: white; }
+        /* 하단 컨트롤 패널 */
+        .control-panel {
+            margin-top: 15px; background: var(--panel); border: 3px solid #475569;
+            border-radius: 12px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+        }
+        .p-info { display: flex; flex-direction: column; gap: 8px; }
+        .neon-btn {
+            width: 100%; padding: 10px; border-radius: 8px; font-weight: bold;
+            border: 2px solid transparent; transition: 0.2s; cursor: pointer; font-size: 0.9rem;
+        }
+        .btn-p1 { border-color: var(--p1); color: var(--p1); box-shadow: inset 0 0 8px var(--p1); }
+        .btn-p2 { border-color: var(--p2); color: var(--p2); box-shadow: inset 0 0 8px var(--p2); }
+
+        /* 스태츠 뱃지 */
+        .stat-badge { background: rgba(0,0,0,0.4); border: 1px solid #fbbf24; color: #fbbf24; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; }
 
         /* 크롭 모달 */
-        #cropModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        #cropCanvas { border: 3px solid #fbbf24; border-radius: 50%; cursor: move; touch-action: none; background: #333; }
-        
-        /* 스태츠 바 스타일 */
-        .stat-tag { background: rgba(0,0,0,0.5); border: 1px solid #fbbf24; padding: 2px 8px; border-radius: 5px; color: #fbbf24; font-size: 0.75rem; margin: 2px; }
+        #cropModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #cropCanvas { border: 2px solid #fbbf24; border-radius: 50%; touch-action: none; background: #222; }
     </style>
 </head>
 <body>
 
     <div id="cropModal">
-        <h2 class="text-yellow-400 text-xl mb-4">사진을 드래그하고 확대하여 맞추세요</h2>
         <canvas id="cropCanvas" width="300" height="300"></canvas>
         <input type="range" id="zoomRange" min="0.1" max="3" step="0.05" value="1" class="w-64 my-6">
-        <button onclick="saveCrop()" class="bg-yellow-500 text-black px-12 py-3 rounded-xl font-bold text-xl">얼굴 확정!</button>
+        <button onclick="saveCrop()" class="bg-yellow-500 text-black px-10 py-3 rounded-xl font-bold">얼굴 저장</button>
     </div>
 
-    <div class="game-container">
-        <div class="text-center mb-4">
-            <h1 class="text-4xl font-black text-yellow-400 italic flex items-center justify-center gap-2">
-                <span class="text-2xl">🖥️</span> THE KING OF IT <span class="text-2xl">🛡️</span>
-            </h1>
-            <p class="text-sky-400 tracking-[0.3em] font-bold text-xs uppercase">Compliance Ultimate Match 2026</p>
+    <div class="game-wrapper">
+        <div class="text-center mb-2">
+            <h1 class="text-2xl md:text-3xl font-black text-yellow-400 italic">THE KING OF IT '26</h1>
         </div>
 
-        <div class="arena-border">
-            <div class="arena-inner">
-                <div class="floor"></div>
-                <div class="hp-system">
-                    <div class="hp-outer"><div id="hp1" class="hp-inner" style="width:100%"></div></div>
-                    <div class="fight-label" id="fightBtn" onclick="startBattle()">FIGHT!</div>
-                    <div class="hp-outer"><div id="hp2" class="hp-inner" style="width:100%"></div></div>
-                </div>
-                <canvas id="gameCanvas"></canvas>
+        <div class="arena-outer">
+            <div class="ui-overlay">
+                <div class="hp-bar"><div id="hp1" class="hp-fill" style="width:100%"></div></div>
+                <div class="fight-btn-top" onclick="startBattle()">FIGHT!</div>
+                <div class="hp-bar"><div id="hp2" class="hp-fill" style="width:100%"></div></div>
             </div>
+            <canvas id="gameCanvas"></canvas>
         </div>
 
         <div class="control-panel">
-            <div class="flex flex-col gap-2">
-                <div class="flex justify-between items-end">
-                    <span class="text-sky-400 font-bold text-lg">Player 1 (Governance)</span>
-                    <div id="stats1" class="flex flex-wrap justify-end"></div>
+            <div class="p-info">
+                <div class="flex justify-between items-center">
+                    <span id="name1" class="text-sky-400 font-bold">Player 1</span>
+                    <div id="s1" class="flex gap-1"></div>
                 </div>
-                <div class="p-box">
-                    <button onclick="openUpload('p1')" class="neon-btn btn-p1">Upload Face</button>
-                    <button class="neon-btn btn-p1" style="border-color:#22c55e; color:#22c55e; box-shadow: inset 0 0 10px #22c55e;">Voice Rec</button>
-                </div>
+                <button onclick="openUpload('p1')" class="neon-btn btn-p1">UPLOAD FACE</button>
             </div>
-            <div class="flex flex-col gap-2">
-                <div class="flex justify-between items-end flex-row-reverse">
-                    <span class="text-rose-500 font-bold text-lg">Player 2 (Audit)</span>
-                    <div id="stats2" class="flex flex-wrap"></div>
+            <div class="p-info">
+                <div class="flex justify-between items-center flex-row-reverse">
+                    <span id="name2" class="text-rose-500 font-bold">Player 2</span>
+                    <div id="s2" class="flex gap-1"></div>
                 </div>
-                <div class="p-box">
-                    <button onclick="openUpload('p2')" class="neon-btn btn-p2">Upload Face</button>
-                    <button class="neon-btn btn-p2" style="border-color:#22c55e; color:#22c55e; box-shadow: inset 0 0 10px #22c55e;">Voice Rec</button>
-                </div>
+                <button onclick="openUpload('p2')" class="neon-btn btn-p2">UPLOAD FACE</button>
             </div>
         </div>
     </div>
@@ -103,43 +113,28 @@
         const ctx = canvas.getContext('2d');
         canvas.width = 1200; canvas.height = 675;
 
-        // 100가지 IT 직군별 멘트 (공격 시 랜덤)
-        const itAttackPhrases = [
-            "망분리 PC에서 유튜브 시청 적발!", "신규 품의서 전체 반려! 사유: 굴림체", "운영 DB에서 WHERE절 빼고 DELETE!", 
-            "배포 10분 전 '원래대로 해주세요' 기획 변경", "슬랙 전체 공지로 '팀장님 꼰대' 전송", "법카 한도초과! 보라짱의 대노!",
-            "내 코드에 'TO-DO' 3,000개 발견", "맥북에 뜨거운 아메리카노 투척", "비밀번호 변경 강제 주기 도래 (특수문자 3개 포함)",
-            "연차 전날 금요일 오후 5시 장애 발생", "깃허브에 AWS 시크릿 키 푸시", "인수인계 문서 0바이트 적발",
-            "옆자리 키보드 갈청축 소음 공격", "회의실 예약 겹쳐서 상무님께 쫓겨남", "탕비실 마지막 카누 내가 다 먹음",
-            "점심시간 10분 전 긴급 미팅 소집", "내 책상 바로 뒤에 본부장님 자리 배치", "전사 보안 점검: 바탕화면 파일 500개 적발",
-            "메일 참조에 사장님 포함해서 실수 발송", "주말인데 서버실 온도가 40도 돌파", "외주 업체가 코드 먹튀 후 잠적",
-            "연봉 협상에서 '회사 사정이 어려워' 시전", "회식 메뉴가 '홍어와 막걸리'로 고정", "PPT 템플릿 촌스럽다고 전면 수정 명령"
-            // (100개까지 배열로 확장 가능하며, 여기선 핵심 예시만 포함)
-        ];
+        const phrases = ["운영DB 삭제!", "품의서 반려!", "법카 한도초과!", "주말 장애발생!", "슬랙 닉네임 실수!", "배포 1분전 기획변경!", "맥북에 커피!", "퇴근직전 회의!"];
+        const nicks = ["문서반려동물", "법카수호자", "야근요정", "보고서살인마", "코드먹튀꾼", "거버넌스보스", "감사킬러"];
+        const statsPool = ["야근력", "정치력", "정신력", "커피심부름력", "엑셀노가다력"];
 
-        const winPhrases = [
-            "남의 연차 강제 승인권 획득!", "일주일간 모든 슬랙 읽씹권 증정!", "본부장님 법카 무제한 사용권 획득!",
-            "점심시간 2시간 자동 연장권!", "모든 회의 강제 불참석 티켓 획득!"
-        ];
+        let p1 = { x: 300, y: 380, hp: 100, face: null, name: "P1", stats: [] };
+        let p2 = { x: 900, y: 380, hp: 100, face: null, name: "P2", stats: [] };
+        let activeP = null, isFighting = false, shake = 0, msg = { text: "", life: 0 };
 
-        let p1 = { x: 280, y: 350, hp: 100, face: null, nick: "GOVERNANCE BOSS", stats: ["야근력 99", "정치력 12"] };
-        let p2 = { x: 920, y: 350, hp: 100, face: null, nick: "AUDIT KILLER", stats: ["장치력 87", "커피심부름력 99"] };
-        let activeP = null, isFighting = false, shake = 0, battleMsg = { text: "", life: 0 };
-
-        // 사진 크롭/조절 기능
+        // 사진 조절
         const cCanvas = document.getElementById('cropCanvas'), cctx = cCanvas.getContext('2d');
         let rawImg = null, cropPos = { x: 150, y: 150 }, isDragging = false, lastX, lastY;
 
         function openUpload(p) { activeP = (p === 'p1' ? p1 : p2); document.getElementById('fileInput').click(); }
 
         document.getElementById('fileInput').onchange = (e) => {
-            const file = e.target.files[0];
             const reader = new FileReader();
             reader.onload = (ev) => {
                 rawImg = new Image();
                 rawImg.onload = () => { document.getElementById('cropModal').style.display = 'flex'; drawCrop(); };
                 rawImg.src = ev.target.result;
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(e.target.files[0]);
         };
 
         function drawCrop() {
@@ -150,13 +145,8 @@
         }
 
         cCanvas.onmousedown = (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; };
-        window.onmousemove = (e) => {
-            if(!isDragging) return;
-            cropPos.x += (e.clientX - lastX); cropPos.y += (e.clientY - lastY);
-            lastX = e.clientX; lastY = e.clientY; drawCrop();
-        };
+        window.onmousemove = (e) => { if(isDragging) { cropPos.x += (e.clientX-lastX); cropPos.y += (e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; drawCrop(); }};
         window.onmouseup = () => isDragging = false;
-        document.getElementById('zoomRange').oninput = drawCrop;
 
         function saveCrop() {
             const temp = document.createElement('canvas'); temp.width = 200; temp.height = 200;
@@ -164,115 +154,88 @@
             tCtx.beginPath(); tCtx.arc(100, 100, 100, 0, Math.PI*2); tCtx.clip();
             tCtx.drawImage(cCanvas, 50, 50, 200, 200, 0, 0, 200, 200);
             activeP.face = new Image(); activeP.face.src = temp.toDataURL();
+            
+            // 사진 저장 시 이름/능력치 랜덤 생성
+            activeP.name = nicks[Math.floor(Math.random()*nicks.length)];
+            activeP.stats = [
+                `${statsPool[Math.floor(Math.random()*statsPool.length)]} ${Math.floor(Math.random()*99)}`,
+                `${statsPool[Math.floor(Math.random()*statsPool.length)]} ${Math.floor(Math.random()*99)}`
+            ];
+            updateUI();
             document.getElementById('cropModal').style.display = 'none';
-            renderStats();
         }
 
-        function renderStats() {
-            const s1 = document.getElementById('stats1');
-            const s2 = document.getElementById('stats2');
-            s1.innerHTML = p1.stats.map(s => `<span class="stat-tag">${s}</span>`).join('');
-            s2.innerHTML = p2.stats.map(s => `<span class="stat-tag">${s}</span>`).join('');
+        function updateUI() {
+            document.getElementById('name1').innerText = p1.name;
+            document.getElementById('name2').innerText = p2.name;
+            document.getElementById('s1').innerHTML = p1.stats.map(s => `<span class="stat-badge">${s}</span>`).join('');
+            document.getElementById('s2').innerHTML = p2.stats.map(s => `<span class="stat-badge">${s}</span>`).join('');
         }
-        renderStats();
 
-        // 캐릭터 그리기 (몸통/팔/다리/네온 효과)
         function drawChar(p, isP1) {
-            const bob = Math.sin(Date.now() / 150) * 8; // 대기 중 흔들림
-            p.x += (p.targetX - p.x) * 0.2;
-
+            const bob = Math.sin(Date.now() / 150) * 8;
             ctx.save();
             ctx.translate(p.x, p.y + bob);
             if(!isP1) ctx.scale(-1, 1);
 
-            // 네온 글로우 효과
-            ctx.shadowBlur = 20;
-            ctx.shadowColor = isP1 ? "#0ea5e9" : "#f43f5e";
-            ctx.strokeStyle = isP1 ? "#0ea5e9" : "#f43f5e";
-            ctx.lineWidth = 3;
-
-            // 몸통 포즈 (이미지와 동일하게)
-            ctx.beginPath();
-            ctx.moveTo(-40, 20); ctx.lineTo(40, 20); ctx.lineTo(30, 100); ctx.lineTo(-30, 100); ctx.closePath();
-            ctx.fillStyle = "#334155"; ctx.fill(); ctx.stroke();
-
-            // 팔 (파이팅 포즈)
-            ctx.beginPath();
-            ctx.moveTo(-40, 30); ctx.lineTo(-70, 60); ctx.lineTo(-50, 80); // 왼팔
-            ctx.moveTo(40, 30); ctx.lineTo(70, 10); ctx.lineTo(90, 30); // 오른팔
-            ctx.stroke();
-
-            // 다리 (벌린 자세)
-            ctx.beginPath();
-            ctx.moveTo(-20, 100); ctx.lineTo(-50, 150); ctx.lineTo(-80, 150);
-            ctx.moveTo(20, 100); ctx.lineTo(50, 150); ctx.lineTo(80, 150);
+            // 몸통 포즈
+            ctx.shadowBlur = 15; ctx.shadowColor = isP1 ? "#0ea5e9" : "#f43f5e";
+            ctx.strokeStyle = isP1 ? "#0ea5e9" : "#f43f5e"; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(-35, 20); ctx.lineTo(35, 20); ctx.lineTo(25, 100); ctx.lineTo(-25, 100); ctx.closePath();
+            ctx.fillStyle = "#1e293b"; ctx.fill(); ctx.stroke();
+            
+            // 팔/다리
+            ctx.beginPath(); ctx.moveTo(-35, 30); ctx.lineTo(-60, 60); ctx.lineTo(-40, 80); // 팔
+            ctx.moveTo(-20, 100); ctx.lineTo(-40, 150); ctx.lineTo(-70, 150); // 다리
+            ctx.moveTo(20, 100); ctx.lineTo(40, 150); ctx.lineTo(70, 150); // 다리
             ctx.stroke();
 
             // 얼굴
             if(p.face) {
-                ctx.save();
-                ctx.beginPath(); ctx.arc(0, -60, 75, 0, Math.PI*2); ctx.clip();
-                ctx.drawImage(p.face, -75, -135, 150, 150);
-                ctx.restore();
-                ctx.beginPath(); ctx.arc(0, -60, 75, 0, Math.PI*2); ctx.stroke(); // 얼굴 테두리
+                ctx.save(); ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.clip();
+                ctx.drawImage(p.face, -70, -130, 140, 140); ctx.restore();
+                ctx.stroke();
             } else {
-                ctx.fillStyle = "#1e293b"; ctx.beginPath(); ctx.arc(0, -60, 75, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.fill(); ctx.stroke();
             }
-
-            // 닉네임
-            ctx.scale(isP1?1:-1, 1);
-            ctx.fillStyle = "white"; ctx.font = "bold 25px Jua"; ctx.textAlign = "center";
-            ctx.fillText(p.nick, 0, 200);
             ctx.restore();
         }
 
         async function startBattle() {
             if(isFighting || !p1.face || !p2.face) return;
             isFighting = true;
-            document.getElementById('fightBtn').innerText = "ING..";
-
             while(p1.hp > 0 && p2.hp > 0) {
-                await attack(p1, p2, true); if(p2.hp <= 0) break;
-                await new Promise(r => setTimeout(r, 700));
-                await attack(p2, p1, false);
-                await new Promise(r => setTimeout(r, 700));
+                await doAtk(p1, p2, true); if(p2.hp <= 0) break;
+                await new Promise(r => setTimeout(r, 600));
+                await doAtk(p2, p1, false);
+                await new Promise(r => setTimeout(r, 600));
             }
-
-            const winner = p1.hp > 0 ? p1.nick : p2.nick;
-            alert(`K.O! [${winner}] 승리!\n보상: ${winPhrases[Math.floor(Math.random()*winPhrases.length)]}`);
+            alert(`게임 종료! 승리: ${p1.hp>0?p1.name:p2.name}`);
             location.reload();
         }
 
-        async function attack(atk, def, isP1) {
-            battleMsg = { text: itAttackPhrases[Math.floor(Math.random()*itAttackPhrases.length)], life: 100 };
-            atk.targetX = isP1 ? 400 : 800; // 앞으로 돌진
-            await new Promise(r => setTimeout(r, 150));
-            shake = 25;
-            def.hp = Math.max(0, def.hp - (15 + Math.random()*20));
-            document.getElementById(isP1 ? 'hp2' : 'hp1').style.width = (isP1 ? p2.hp : p1.hp) + "%";
+        async function doAtk(a, d, isP1) {
+            msg = { text: phrases[Math.floor(Math.random()*phrases.length)], life: 70 };
+            const startX = a.x; a.x = isP1 ? d.x - 100 : d.x + 100; shake = 20;
+            d.hp = Math.max(0, d.hp - 20);
+            document.getElementById(isP1?'hp2':'hp1').style.width = (isP1?p2.hp:p1.hp) + "%";
             await new Promise(r => setTimeout(r, 300));
-            atk.targetX = isP1 ? 280 : 920; // 복귀
+            a.x = startX;
         }
 
         function loop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2); shake *= 0.85; }
-
-            drawChar(p1, true);
-            drawChar(p2, false);
-
-            if(battleMsg.life > 0) {
-                ctx.fillStyle = "#fff"; ctx.font = "bold 35px Jua"; ctx.textAlign = "center";
-                // 말풍선 형태 재현
-                ctx.fillStyle = "rgba(0,0,0,0.8)";
-                const tw = ctx.measureText(battleMsg.text).width;
-                ctx.fillRect(600 - tw/2 - 20, 230, tw + 40, 60);
-                ctx.strokeStyle = "#fbbf24"; ctx.strokeRect(600 - tw/2 - 20, 230, tw + 40, 60);
-                ctx.fillStyle = "#fbbf24";
-                ctx.fillText(battleMsg.text, 600, 275);
-                battleMsg.life--;
+            ctx.clearRect(0, 0, 1200, 675);
+            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2); shake *= 0.8; }
+            
+            // 바닥 격자
+            ctx.strokeStyle = "rgba(14, 165, 233, 0.2)"; ctx.lineWidth = 1;
+            for(let i=0; i<12; i++) { ctx.beginPath(); ctx.moveTo(0, 480+i*20); ctx.lineTo(1200, 480+i*20); ctx.stroke(); }
+            
+            drawChar(p1, true); drawChar(p2, false);
+            if(msg.life > 0) {
+                ctx.fillStyle = "#fbbf24"; ctx.font = "bold 40px Jua"; ctx.textAlign = "center";
+                ctx.fillText(battleMsg = msg.text, 600, 250); msg.life--;
             }
-
             if(shake > 0) ctx.restore();
             requestAnimationFrame(loop);
         }
