@@ -3,445 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>포토 파이터 - 액션 업그레이드</title>
+    <title>포토 파이터 - 금융 실무 에디션</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap');
         
         body {
-            font-family: 'Press Start 2P', system-ui;
-            background: linear-gradient(180deg, #0a001f, #2a0033);
+            font-family: 'Jua', sans-serif;
+            background: #0f172a;
             color: white;
-            overflow: hidden;
+            touch-action: manipulation;
+            margin: 0;
+            padding: 10px;
         }
-        
-        .arena {
+
+        /* 반응형 아레나 컨테이너 */
+        .arena-wrapper {
             position: relative;
             width: 100%;
-            max-width: 960px;
-            margin: 20px auto;
-            background: #0f0a1f;
-            border: 10px solid #00ffff;
-            border-radius: 25px;
-            box-shadow: 0 0 60px #ff00aa, inset 0 0 80px rgba(0,255,255,0.2);
+            max-width: 800px;
+            aspect-ratio: 16 / 9;
+            margin: 0 auto;
+            border: 4px solid #38bdf8;
+            border-radius: 15px;
             overflow: hidden;
-            aspect-ratio: 960 / 480;
+            background: #1e293b;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
         }
-        
+
         canvas {
-            width: 100% !important;
-            height: 100% !important;
+            width: 100%;
+            height: 100%;
             display: block;
-            image-rendering: pixelated;
         }
-        
-        .stat-bar {
-            height: 12px;
-            background: #111;
-            border: 3px solid #00ffff;
-            border-radius: 9999px;
+
+        .input-group input {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid #38bdf8;
+            color: white;
+            border-radius: 8px;
+            padding: 5px 10px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .hp-bar-bg {
+            height: 10px;
+            background: #334155;
+            border-radius: 5px;
             overflow: hidden;
         }
-        
-        .name-input {
-            font-family: 'Press Start 2P', system-ui;
-            background: rgba(255,255,255,0.1);
-            border: 3px solid #00ffff;
+
+        .hp-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #4ade80);
+            transition: width 0.3s ease;
         }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center py-4 px-4">
-    <div class="text-center mb-4">
-        <h1 class="text-5xl md:text-6xl tracking-widest text-[#00ffff] drop-shadow-[0_0_30px_#00ffff]">📸 포토 파이터</h1>
-        <p class="text-[#ff00aa] text-xl md:text-2xl">액션 강화 버전</p>
-    </div>
+<body class="flex flex-col items-center">
 
-    <!-- 이름 입력 -->
-    <div class="w-full max-w-4xl mx-auto grid grid-cols-2 gap-4 mb-6">
-        <div class="bg-black/40 border border-[#00ffff] rounded-3xl p-4 text-center">
-            <input id="player-name-input" 
-                   type="text" 
-                   value="YOU" 
-                   class="name-input w-full text-center text-2xl bg-transparent focus:outline-none text-white"
-                   maxlength="12" onchange="updateNames()">
-            <div class="text-xs text-[#00ffff] mt-1">플레이어</div>
-        </div>
-        <div class="bg-black/40 border border-[#ff00aa] rounded-3xl p-4 text-center">
-            <input id="opponent-name-input" 
-                   type="text" 
-                   value="RIVAL" 
-                   class="name-input w-full text-center text-2xl bg-transparent focus:outline-none text-white"
-                   maxlength="12" onchange="updateNames()">
-            <div class="text-xs text-[#ff00aa] mt-1">상대</div>
+    <div class="w-full max-w-2xl mb-4 text-center">
+        <h1 class="text-3xl font-bold text-sky-400 mb-4">🏦 금융 실무 파이터</h1>
+        
+        <div class="grid grid-cols-2 gap-4 input-group">
+            <div>
+                <label class="text-xs text-sky-300">내 이름</label>
+                <input id="p-name" type="text" value="나대리" oninput="syncNames()">
+            </div>
+            <div>
+                <label class="text-xs text-pink-400">상대 이름</label>
+                <input id="o-name" type="text" value="김부장" oninput="syncNames()">
+            </div>
         </div>
     </div>
 
-    <!-- 아레나 -->
-    <div class="arena" id="arena-container">
-        <canvas id="gameCanvas" width="960" height="480"></canvas>
+    <div class="arena-wrapper" id="arena-container">
+        <canvas id="gameCanvas"></canvas>
     </div>
 
-    <!-- 능력치 + 컨트롤 -->
-    <div class="w-full max-w-4xl mx-auto bg-black/70 border-t-4 border-[#00ffff] p-5 rounded-3xl">
-        <div class="flex flex-col md:flex-row gap-6">
-            
-            <!-- 플레이어 능력치 -->
-            <div class="flex-1">
-                <div class="text-[#00ffff] text-xl mb-2">플레이어 <span id="player-name-label" class="font-bold">YOU</span></div>
-                <div class="space-y-3">
-                    <div>
-                        <div class="flex justify-between text-xs mb-1"><span>HP</span><span id="player-hp-text">280 / 280</span></div>
-                        <div class="stat-bar"><div id="player-hp-bar" class="h-full bg-gradient-to-r from-green-400 to-emerald-500 w-[100%]"></div></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>ATK <span id="player-atk" class="font-bold text-orange-400">78</span></div>
-                        <div>DEF <span id="player-def" class="font-bold text-blue-400">55</span></div>
-                    </div>
-                </div>
+    <div class="w-full max-w-2xl mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-800 p-4 rounded-xl">
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm"><span id="lbl-p-name">나대리</span><span>HP</span></div>
+            <div class="hp-bar-bg"><div id="hp-p-fill" class="hp-bar-fill" style="width: 100%"></div></div>
+        </div>
+        
+        <div class="flex flex-col gap-2">
+            <button onclick="startBattle()" id="btn-start" class="bg-sky-500 hover:bg-sky-400 py-3 rounded-lg font-bold text-lg shadow-lg active:scale-95 transition">⚔️ 업무 시작!</button>
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('up-p').click()" class="flex-1 bg-slate-700 text-xs py-2 rounded border border-slate-500">내 사진</button>
+                <button onclick="document.getElementById('up-o').click()" class="flex-1 bg-slate-700 text-xs py-2 rounded border border-slate-500">상대 사진</button>
             </div>
+            <input type="file" id="up-p" hidden accept="image/*" onchange="loadFile(event, 'player')">
+            <input type="file" id="up-o" hidden accept="image/*" onchange="loadFile(event, 'opp')">
+        </div>
 
-            <!-- 상대 능력치 -->
-            <div class="flex-1">
-                <div class="text-[#ff00aa] text-xl mb-2">상대 <span id="opponent-name-label" class="font-bold">RIVAL</span></div>
-                <div class="space-y-3">
-                    <div>
-                        <div class="flex justify-between text-xs mb-1"><span>HP</span><span id="opponent-hp-text">300 / 300</span></div>
-                        <div class="stat-bar"><div id="opponent-hp-bar" class="h-full bg-gradient-to-r from-green-400 to-emerald-500 w-[100%]"></div></div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm">
-                        <div>ATK <span id="opponent-atk" class="font-bold text-orange-400">85</span></div>
-                        <div>DEF <span id="opponent-def" class="font-bold text-blue-400">48</span></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 버튼 -->
-            <div class="flex flex-col md:flex-row items-center justify-center gap-4 md:w-80">
-                <button onclick="startBattle()" 
-                        class="px-10 py-6 bg-gradient-to-r from-red-600 to-pink-600 text-3xl font-bold rounded-3xl hover:scale-110 active:scale-95 transition-all shadow-2xl flex-1 md:flex-none">
-                    ⚔️ 전투 시작
-                </button>
-                <button onclick="resetBattle()" 
-                        class="px-8 py-6 bg-white/10 hover:bg-white/20 text-2xl rounded-3xl border border-white/40 flex-1 md:flex-none">
-                    🔄 재시작
-                </button>
-            </div>
-
-            <!-- 사진 업로드 -->
-            <div class="flex flex-col gap-3 md:w-64">
-                <button onclick="document.getElementById('player-upload').click()" 
-                        class="flex-1 py-4 bg-[#00ffff] text-black hover:bg-cyan-300 font-bold rounded-3xl text-lg flex items-center justify-center gap-2">
-                    📸 내 사진
-                </button>
-                <input type="file" id="player-upload" accept="image/*" class="hidden" onchange="loadPlayerPhoto(event)">
-                
-                <button onclick="document.getElementById('opponent-upload').click()" 
-                        class="flex-1 py-4 bg-[#ff00aa] text-white hover:bg-pink-600 font-bold rounded-3xl text-lg flex items-center justify-center gap-2">
-                    📸 상대 사진
-                </button>
-                <input type="file" id="opponent-upload" accept="image/*" class="hidden" onchange="loadOpponentPhoto(event)">
-            </div>
+        <div class="space-y-2">
+            <div class="flex justify-between text-sm"><span id="lbl-o-name">김부장</span><span>HP</span></div>
+            <div class="hp-bar-bg"><div id="hp-o-fill" class="hp-bar-fill" style="width: 100%"></div></div>
         </div>
     </div>
 
     <script>
-        // ====================== 변수 ======================
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        let player = { x: 180, hp: 280, maxHp: 280, atk: 78, def: 55, name: "YOU", img: null };
-        let opponent = { x: 680, hp: 300, maxHp: 300, atk: 85, def: 48, name: "RIVAL", img: null };
-        
-        let particles = [];
-        let shakeAmount = 0;
-        let battleRunning = false;
-        
-        let currentPlayerName = "YOU";
-        let currentOpponentName = "RIVAL";
-        
-        // ====================== 반응형 캔버스 ======================
-        function resizeCanvas() {
-            const container = document.getElementById('arena-container');
-            const ratio = 960 / 480;
-            
-            let newWidth = container.clientWidth;
-            let newHeight = newWidth / ratio;
-            
-            // 모바일/태블릿 최대 높이 제한
-            if (newHeight > window.innerHeight * 0.55) {
-                newHeight = window.innerHeight * 0.55;
-                newWidth = newHeight * ratio;
-            }
-            
-            canvas.width = 960;
-            canvas.height = 480;
-            canvas.style.width = newWidth + 'px';
-            canvas.style.height = newHeight + 'px';
+        // 50종의 금융권 실무 멘트
+        const phrases = [
+            "발주 1000개 리스트 정리!", "필살기 BCP 가동!!", "계약현황관리 눈알 붙이기!!", "분실자산 1000개 발견!!",
+            "금감원 수검 대응 개시!", "IT 예산 편성 삭감 빔!!", "구매 품의 무한 반려!", "컴플라이언스 위반 탐지!",
+            "자산 실사 지옥의 레이스!", "보안성 심의 미승인!", "망분리 우회 차단!!", "데이터 센터 긴급 점검!",
+            "정보보호 상시평가 제출!", "계약서 법무 검토 지옥!", "입찰 공고 재게시!!", "내부회계관리제도 감사!",
+            "전산 장애 긴급 복구!", "소프트웨어 라이선스 실사!", "비용 집행 증빙 누락!", "법인카드 사적 사용 적발!",
+            "서버실 온습도 이상 무!!", "정기 보안 패치 강제 실행!", "외주 인력 출입 통제!", "정보 유출 탐지 시스템 작동!",
+            "로그 분석 결과 보고!!", "금리 변동 시뮬레이션!", "여신 승인 프로세스 중단!", "전자금융사고 보고서 작성!",
+            "개인정보 영향평가 실시!", "클라우드 전환 계획 전면 재검토!", "방화벽 정책 1만건 정리!", "VPN 접속 차단 공격!",
+            "사용자 권한 오남용 발견!", "차세대 시스템 오픈 연기!", "코드 리뷰 무한 루프!", "데이터 마이그레이션 오류!",
+            "백업 테이프 소거 완료!", "감사 지적 사항 이행 보고!", "연간 운영계획 수립!", "예산 전용 승인 요청!",
+            "하드웨어 내용연수 만료!", "자산 폐기 신청서 승인!", "기술 지원 계약 연장!", "긴급 장애 전파 SMS!",
+            "메인프레임 시스템 점검!", "망 연계 솔루션 오류 복구!", "내부망 PC 포맷 실행!", "단말기 보안 에이전트 강제 설치!",
+            "재해복구센터 전환 훈련!", "최종 승인권자 부재중!!"
+        ];
+
+        let player = { x: 100, hp: 100, img: new Image(), name: "나대리" };
+        let opp = { x: 500, hp: 100, img: new Image(), name: "김부장" };
+        player.img.src = "https://picsum.photos/id/64/300/300";
+        opp.img.src = "https://picsum.photos/id/91/300/300";
+
+        let battleText = { content: "", opacity: 0, x: 0, y: 0 };
+        let isRunning = false;
+
+        function resize() {
+            canvas.width = 800;
+            canvas.height = 450;
         }
-        
-        // ====================== 사진 로드 ======================
-        function loadPlayerPhoto(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+        window.addEventListener('resize', resize);
+        resize();
+
+        function syncNames() {
+            player.name = document.getElementById('p-name').value;
+            opp.name = document.getElementById('o-name').value;
+            document.getElementById('lbl-p-name').innerText = player.name;
+            document.getElementById('lbl-o-name').innerText = opp.name;
+        }
+
+        function loadFile(event, type) {
+            const file = event.target.files[0];
             const reader = new FileReader();
-            reader.onload = ev => {
-                const img = new Image();
-                img.src = ev.target.result;
-                player.img = img;
+            reader.onload = (e) => {
+                if(type === 'player') player.img.src = e.target.result;
+                else opp.img.src = e.target.result;
             };
             reader.readAsDataURL(file);
         }
-        
-        function loadOpponentPhoto(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = ev => {
-                const img = new Image();
-                img.src = ev.target.result;
-                opponent.img = img;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // ====================== 이름 업데이트 ======================
-        function updateNames() {
-            currentPlayerName = document.getElementById('player-name-input').value || "YOU";
-            currentOpponentName = document.getElementById('opponent-name-input').value || "RIVAL";
-            
-            player.name = currentPlayerName;
-            opponent.name = currentOpponentName;
-            
-            document.getElementById('player-name-label').textContent = currentPlayerName;
-            document.getElementById('opponent-name-label').textContent = currentOpponentName;
-        }
-        
-        // ====================== 파티클 ======================
-        class Particle {
-            constructor(x, y, color) {
-                this.x = x; this.y = y;
-                this.vx = (Math.random() - 0.5) * 20;
-                this.vy = (Math.random() - 0.5) * 20 - 4;
-                this.life = 55;
-                this.color = color;
-                this.size = 7 + Math.random() * 11;
+
+        async function startBattle() {
+            if (isRunning) return;
+            isRunning = true;
+            player.hp = 100; opp.hp = 100;
+            updateUI();
+
+            while (player.hp > 0 && opp.hp > 0) {
+                await attack(player, opp, true);
+                if (opp.hp <= 0) break;
+                await new Promise(r => setTimeout(r, 600));
+                await attack(opp, player, false);
+                await new Promise(r => setTimeout(r, 600));
             }
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-                this.vy += 0.4;
-                this.life--;
-                this.size *= 0.96;
-            }
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.life / 55;
-                ctx.fillStyle = this.color;
-                ctx.fillRect(this.x - this.size/2, this.y - this.size/2, this.size, this.size);
-                ctx.restore();
-            }
+            
+            alert(player.hp > 0 ? `${player.name} 승리! (업무 완수)` : `${opp.name} 승리! (시말서 확정)`);
+            isRunning = false;
         }
-        
-        function createExplosion(x, y, intensity = 1.8) {
-            for (let i = 0; i < 55 * intensity; i++) {
-                const colors = ['#ffaa00', '#ff3300', '#ffff00', '#ff0088', '#00ffff'];
-                particles.push(new Particle(x, y, colors[Math.floor(Math.random()*colors.length)]));
+
+        async function attack(attacker, target, isPlayer) {
+            battleText.content = phrases[Math.floor(Math.random() * phrases.length)];
+            battleText.x = attacker.x;
+            battleText.y = 150;
+            battleText.opacity = 1;
+
+            // 돌진 애니메이션
+            const originalX = attacker.x;
+            const targetX = isPlayer ? target.x - 80 : target.x + 80;
+            
+            for(let i=0; i<10; i++) {
+                attacker.x += (targetX - attacker.x) * 0.3;
+                await new Promise(r => setTimeout(r, 20));
             }
-            shakeAmount = 28;
+
+            target.hp -= Math.floor(Math.random() * 20) + 10;
+            if(target.hp < 0) target.hp = 0;
+            updateUI();
+
+            // 후퇴
+            for(let i=0; i<10; i++) {
+                attacker.x += (originalX - attacker.x) * 0.3;
+                battleText.opacity -= 0.1;
+                await new Promise(r => setTimeout(r, 20));
+            }
+            attacker.x = originalX;
+            battleText.opacity = 0;
         }
-        
-        // ====================== 그리기 ======================
-        function drawFighter(f, isPlayer) {
-            if (!f.img) return;
-            const scale = 1.15;
-            const w = 230 * scale;
-            const h = 330 * scale;
-            
-            ctx.save();
-            if (!isPlayer) ctx.scale(-1, 1);
-            
-            const drawX = isPlayer ? f.x : -f.x - w;
-            ctx.drawImage(f.img, drawX, 105, w, h);
-            
-            // HP 바 (화면에 항상 보이게 크게)
-            const barX = isPlayer ? f.x - 25 : -f.x - 240;
-            const barY = 68;
-            ctx.fillStyle = '#111';
-            ctx.fillRect(barX, barY, 240, 28);
-            const hpPercent = Math.max(0, f.hp / f.maxHp);
-            ctx.fillStyle = hpPercent > 0.3 ? '#00ff88' : '#ff4444';
-            ctx.fillRect(barX, barY, 240 * hpPercent, 28);
-            
-            // HP 텍스트
-            ctx.fillStyle = '#ffffff';
-            ctx.font = 'bold 18px Press Start 2P';
-            ctx.textAlign = 'center';
-            ctx.fillText(Math.floor(f.hp), barX + 120, barY + 21);
-            
-            ctx.restore();
+
+        function updateUI() {
+            document.getElementById('hp-p-fill').style.width = player.hp + "%";
+            document.getElementById('hp-o-fill').style.width = opp.hp + "%";
         }
-        
-        function gameLoop() {
+
+        function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // 배경
-            const grad = ctx.createLinearGradient(0, 0, 0, 480);
-            grad.addColorStop(0, '#1a0033');
-            grad.addColorStop(1, '#0a001f');
-            ctx.fillStyle = grad;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // 파이터
-            drawFighter(player, true);
-            drawFighter(opponent, false);
-            
-            // 파티클
-            for (let i = particles.length - 1; i >= 0; i--) {
-                particles[i].update();
-                particles[i].draw();
-                if (particles[i].life <= 0) particles.splice(i, 1);
-            }
-            
-            // 화면 흔들림
-            if (shakeAmount > 0) {
-                ctx.save();
-                ctx.translate(Math.random() * shakeAmount - shakeAmount/2, Math.random() * shakeAmount - shakeAmount/2);
-                shakeAmount *= 0.82;
-                ctx.restore();
-            }
-            
-            requestAnimationFrame(gameLoop);
-        }
-        
-        // ====================== 공격 모션 ======================
-        async function performAttack(attacker, defender, attackName) {
-            const isPlayer = attacker === player;
-            const startX = attacker.x;
-            const targetX = isPlayer ? defender.x - 110 : defender.x + 110;
-            
-            // 돌진
-            for (let i = 0; i < 9; i++) {
-                attacker.x += (targetX - attacker.x) * 0.28;
-                await new Promise(r => setTimeout(r, 14));
-            }
-            
-            // 히트 + 폭발
-            const damage = Math.floor(24 + Math.random() * 42);
-            defender.hp = Math.max(0, defender.hp - damage);
-            createExplosion(isPlayer ? defender.x + 70 : defender.x - 70, 230);
-            
-            shakeAmount = 32;
-            
-            // 후퇴
-            for (let i = 0; i < 7; i++) {
-                attacker.x += (startX - attacker.x) * 0.32;
-                await new Promise(r => setTimeout(r, 18));
-            }
-        }
-        
-        // ====================== 전투 시작 ======================
-        async function startBattle() {
-            if (battleRunning) return;
-            battleRunning = true;
-            
-            // 능력치 랜덤 재설정
-            player.hp = player.maxHp = 260 + Math.random() * 50;
-            opponent.hp = opponent.maxHp = 280 + Math.random() * 60;
-            player.atk = 70 + Math.random() * 25;
-            player.def = 48 + Math.random() * 18;
-            opponent.atk = 78 + Math.random() * 28;
-            opponent.def = 42 + Math.random() * 22;
-            
-            updateStatUI();
-            
-            let turn = 0;
-            const maxTurns = 18 + Math.floor(Math.random() * 7); // 18~24턴
-            
-            while (player.hp > 0 && opponent.hp > 0 && turn < maxTurns) {
-                turn++;
-                
-                if (player.hp > 0) {
-                    await performAttack(player, opponent, "");
-                    await new Promise(r => setTimeout(r, 380));
-                    updateStatUI();
-                }
-                
-                if (opponent.hp > 0) {
-                    await performAttack(opponent, player, "");
-                    await new Promise(r => setTimeout(r, 420));
-                    updateStatUI();
-                }
-            }
-            
-            battleRunning = false;
-            showResult();
-        }
-        
-        function updateStatUI() {
+            // 배경 격자
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            for(let i=0; i<canvas.width; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+
+            // 캐릭터 그리기
+            ctx.save();
             // 플레이어
-            const pPercent = Math.max(0, player.hp / player.maxHp) * 100;
-            document.getElementById('player-hp-bar').style.width = pPercent + '%';
-            document.getElementById('player-hp-text').textContent = `${Math.floor(player.hp)} / ${Math.floor(player.maxHp)}`;
-            document.getElementById('player-atk').textContent = Math.floor(player.atk);
-            document.getElementById('player-def').textContent = Math.floor(player.def);
-            
-            // 상대
-            const oPercent = Math.max(0, opponent.hp / opponent.maxHp) * 100;
-            document.getElementById('opponent-hp-bar').style.width = oPercent + '%';
-            document.getElementById('opponent-hp-text').textContent = `${Math.floor(opponent.hp)} / ${Math.floor(opponent.maxHp)}`;
-            document.getElementById('opponent-atk').textContent = Math.floor(opponent.atk);
-            document.getElementById('opponent-def').textContent = Math.floor(opponent.def);
+            ctx.shadowBlur = 15; ctx.shadowColor = "#38bdf8";
+            ctx.drawImage(player.img, player.x, 200, 150, 150);
+            // 상대 (반전)
+            ctx.shadowColor = "#f43f5e";
+            ctx.translate(opp.x + 150, 200);
+            ctx.scale(-1, 1);
+            ctx.drawImage(opp.img, 0, 0, 150, 150);
+            ctx.restore();
+
+            // 말풍선 멘트
+            if (battleText.opacity > 0) {
+                ctx.fillStyle = `rgba(255, 255, 0, ${battleText.opacity})`;
+                ctx.font = "bold 24px Jua";
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "black";
+                ctx.lineWidth = 4;
+                ctx.strokeText(battleText.content, battleText.x + 75, battleText.y);
+                ctx.fillText(battleText.content, battleText.x + 75, battleText.y);
+            }
+
+            requestAnimationFrame(draw);
         }
-        
-        // ====================== 결과 화면 ======================
-        const winComments = [
-            "압도적인 승리다!! 🔥",
-            "네 사진이 최강이야!!",
-            "완벽한 KO! 👊",
-            "킹 오브 포토 등극!!",
-            "이게 바로 사진 파워다!!"
-        ];
-        
-        const loseComments = [
-            "아쉽지만 다음 기회에..",
-            "상대가 너무 강했다..",
-            "조금만 더 강해지자!",
-            "다음엔 이긴다!!",
-            "사진 운이 좀.."
-        ];
-        
-        function showResult() {
-            const playerWin = player.hp > opponent.hp;
-            
-            let message = playerWin 
-                ? `🎉 ${currentPlayerName} 승리!\n${winComments[Math.floor(Math.random() * winComments.length)]}`
-                : `💥 ${currentOpponentName} 승리..\n${loseComments[Math.floor(Math.random() * loseComments.length)]}`;
-            
-            alert(message);
-        }
-        
-        function resetBattle() {
-            location.reload();
-        }
-        
-        // ====================== 초기화 ======================
-        window.onload = () => {
-            // 기본 이미지
-            const pImg = new Image();
-            pImg.src = "https://picsum.photos/id/1015/400/500";
-            player.img = pImg;
-            
-            const oImg = new Image();
-            oImg.src = "https://picsum.photos/id/201/400/500";
-            opponent.img = oImg;
-            
-            resizeCanvas();
-            window.addEventListener('resize', resizeCanvas);
-            
-            gameLoop();
-            updateNames();
-            console.log('%c✅ 포토 파이터 완전 업그레이드 완료!', 'color:#00ffff; font-size:18px');
-        };
+        draw();
     </script>
 </body>
 </html>
