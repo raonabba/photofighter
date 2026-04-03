@@ -3,181 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>IT 금융 실무 파이터 - 굴욕의 배포판</title>
+    <title>K-IT GOVERNANCE FIGHTER</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap');
-        body { font-family: 'Jua', sans-serif; background: #0f172a; color: white; touch-action: manipulation; padding: 10px; }
-        .arena-wrapper { position: relative; width: 100%; max-width: 850px; aspect-ratio: 16 / 9; margin: 0 auto; border: 4px solid #38bdf8; border-radius: 20px; overflow: hidden; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); box-shadow: 0 0 30px rgba(56, 189, 248, 0.3); }
-        canvas { width: 100%; height: 100%; display: block; }
-        .hp-bar-bg { height: 14px; background: #334155; border-radius: 7px; overflow: hidden; border: 2px solid #1e293b; }
-        .hp-bar-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); transition: width 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .input-group input { background: rgba(15, 23, 42, 0.8); border: 2px solid #38bdf8; color: white; border-radius: 10px; padding: 8px; width: 100%; text-align: center; font-size: 1.1rem; }
+        body { font-family: 'Jua', sans-serif; background: #020617; color: white; overflow: hidden; touch-action: manipulation; }
+        .arena-wrapper { 
+            position: relative; width: 95%; max-width: 900px; aspect-ratio: 16 / 9; margin: 20px auto; 
+            border: 5px solid #1e293b; border-radius: 10px; overflow: hidden;
+            background: linear-gradient(to bottom, #0f172a 0%, #1e293b 70%, #334155 100%);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8), inset 0 0 100px rgba(56,189,248,0.1);
+        }
+        canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+        .hp-container { position: absolute; top: 20px; width: 100%; display: flex; justify-content: space-between; px: 40px; }
+        .hp-outer { width: 40%; height: 25px; background: #450a0a; border: 3px solid #f8fafc; transform: skew(-15deg); overflow: hidden; }
+        .hp-inner { height: 100%; background: linear-gradient(90deg, #facc15, #ef4444); transition: width 0.3s ease-out; }
+        .player-label { position: absolute; top: 50px; font-family: 'Black Han Sans'; font-size: 1.5rem; text-shadow: 2px 2px #000; }
     </style>
 </head>
 <body class="flex flex-col items-center">
 
-    <div class="w-full max-w-2xl mb-4 text-center">
-        <h1 class="text-3xl font-bold text-sky-400 mb-4 italic">⚡ IT FINANCE FIGHTER ⚡</h1>
-        <div class="grid grid-cols-2 gap-6 input-group">
-            <div>
-                <label class="text-sm text-sky-300 block mb-1">PLAYER 1 (이름)</label>
-                <input id="p1-name" type="text" value="테크구매팀" oninput="syncNames()">
-            </div>
-            <div>
-                <label class="text-sm text-pink-400 block mb-1">PLAYER 2 (이름)</label>
-                <input id="p2-name" type="text" value="감사법무팀" oninput="syncNames()">
-            </div>
-        </div>
+    <div class="mt-4 text-center">
+        <h1 class="text-4xl font-bold text-yellow-400 italic tracking-tighter">THE KING OF IT-COMPLIANCE '26</h1>
     </div>
 
-    <div class="arena-wrapper">
+    <div class="arena-wrapper" id="arena">
+        <div class="hp-container px-10">
+            <div class="hp-outer"><div id="hp-p1" class="hp-inner" style="width: 100%"></div></div>
+            <div class="hp-outer"><div id="hp-p2" class="hp-inner" style="width: 100%"></div></div>
+        </div>
+        <div id="p1-tag" class="player-label left-16 text-sky-400">P1</div>
+        <div id="p2-tag" class="player-label right-16 text-rose-500">P2</div>
         <canvas id="gameCanvas"></canvas>
     </div>
 
-    <div class="w-full max-w-2xl mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-800/80 p-5 rounded-2xl border border-slate-700">
-        <div class="space-y-3">
-            <div class="flex justify-between items-end"><span id="lbl-p1-name" class="text-xl text-sky-400">PLAYER 1</span><span class="text-xs text-slate-400">HP</span></div>
-            <div class="hp-bar-bg"><div id="hp-p1-fill" class="hp-bar-fill" style="width: 100%"></div></div>
-            <button onclick="document.getElementById('up-p1').click()" class="w-full bg-slate-700 text-xs py-2 rounded-lg border border-slate-600 hover:bg-slate-600 transition">P1 얼굴 변경</button>
+    <div class="w-full max-w-2xl grid grid-cols-2 gap-4 p-4 bg-slate-900 rounded-xl border-t-4 border-yellow-500">
+        <div class="flex flex-col gap-2">
+            <input id="name1" type="text" value="구매자산팀" class="bg-slate-800 p-2 rounded border border-sky-500 text-center">
+            <button onclick="document.getElementById('file1').click()" class="bg-sky-700 text-xs py-1 rounded">얼굴 합성</button>
+            <input type="file" id="file1" hidden onchange="loadImg(event, 'p1')">
         </div>
-        
-        <div class="flex flex-col justify-center gap-3">
-            <button onclick="startBattle()" id="btn-start" class="bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold text-xl shadow-[0_0_15px_rgba(37,99,235,0.5)] active:scale-95 transition-all">⚔️ 서비스 배포!</button>
-            <input type="file" id="up-p1" hidden accept="image/*" onchange="loadFile(event, 'p1')">
-            <input type="file" id="up-p2" hidden accept="image/*" onchange="loadFile(event, 'p2')">
+        <div class="flex flex-col gap-2">
+            <input id="name2" type="text" value="거버넌스팀" class="bg-slate-800 p-2 rounded border border-rose-500 text-center">
+            <button onclick="document.getElementById('file2').click()" class="bg-rose-700 text-xs py-1 rounded">얼굴 합성</button>
+            <input type="file" id="file2" hidden onchange="loadImg(event, 'p2')">
         </div>
-
-        <div class="space-y-3">
-            <div class="flex justify-between items-end"><span id="lbl-p2-name" class="text-xl text-pink-400">PLAYER 2</span><span class="text-xs text-slate-400">HP</span></div>
-            <div class="hp-bar-bg"><div id="hp-p2-fill" class="hp-bar-fill" style="width: 100%"></div></div>
-            <button onclick="document.getElementById('up-p2').click()" class="w-full bg-slate-700 text-xs py-2 rounded-lg border border-slate-600 hover:bg-slate-600 transition">P2 얼굴 변경</button>
-        </div>
+        <button onclick="startBattle()" class="col-span-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold py-3 rounded-lg text-xl transform active:scale-95 transition">ROUND 1... FIGHT!</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        
-        // 공격 멘트 50종 (IT 금융 실무용)
-        const attackPhrases = ["금감원 수검 대응 자료 1,000장 준비!", "운영 서버 root 권한 즉시 회수!!", "보안성 심의 '조건부 승인'!", "망분리 PC 인터넷 즉시 차단!", "IT 구매 품의 '반려' 처리!", "클라우드 비용 300% 폭증!", "자산 실사 누락분 500개 발견!", "긴급 장애 전파: 결제 마비!", "SW 라이선스 오남용 적발!", "정보보호 상시평가 미이행!", "외주 인력 노트북 포맷 확인!", "IT 예산 전액 삭감!", "데이터 유실 발생: 복구 불가!", "코드 리뷰: 전면 재작성!", "금요일 5시 긴급 배포 승인!", "내부망 VPN 권한 만료!", "개인정보 노출 사고 오탐!", "계약서 법무 검토: 전면 수정!", "입찰 담합 소명 자료 제출!", "서버 패치 실패: 롤백 불가!", "방화벽 정책 5,000건 삭제!", "자산 관리 태그 1만개 부착!", "기술지원 계약 SLA 미준수!", "BCP 훈련: 센터 강제 전환!", "비인가 SW 탐지: 시말서!", "유지보수 대금 정산 누락!", "신규 솔루션 보안성 거절!", "데이터 센터 출입 기록 조작!", "사용자 권한 오남용 감사!", "망 연계 서버 트래픽 초과!", "백업 데이터 복구 실패!", "차세대 오픈 무기한 연기!", "하드웨어 내용연수 강제 연장!", "정보보안 공시 자료 오기입!", "감사 지적 사항 100건 미이행!", "법인카드 정산 반려!", "IT 기획안 '전략 부재' 회신!", "SSL 인증서 만료 차단!", "시스템 취약점 '상'급 50건!", "외주 업체 보안 위반 벌점!", "DB 쿼리 성능 저하 전체 락!", "보안 에이전트 점유율 99%!", "실소유자 확인 프로세스 누락!", "이상 금융거래 시스템 마비!", "연간 운영계획 백지화!", "최종 결재권자 장기 휴가!", "망분리 우회 시도 적발!!", "장애 보고서 5단 콤보 작성!"];
+        canvas.width = 1200; canvas.height = 675;
 
-        // 패배자 굴욕 멘트 20종
-        const humiliationPhrases = [
-            "실무 능력이 주니어보다 못하시네요.", "장애 보고서나 쓰러 가시죠, 폰트 10으로.", "인사 고과는 이미 'D'로 확정되었습니다.", "현업 부서가 당신 이름만 들어도 고개를 젓네요.", "당신이 만든 시스템, 오늘부로 전량 폐기입니다.", "망분리 PC 없는 창고 자리가 당신의 새 사무실입니다.", "법인카드는커녕 탕비실 믹스커피도 금지입니다.", "보안성 심의 통과 확률 0%에 수렴하시네요.", "외주 업체 사장님도 당신보다는 일 잘할듯.", "당신의 기획안은 이면지로도 아깝습니다.", "로그 기록 보니까 일 안 하고 딴짓만 하셨던데?", "클라우드 비용 낭비 주범으로 명예의 전당 등극!", "시말서 100장 써오세요. 수기로.", "당신 자산 관리 번호는 '000001'(폐기 예정)입니다.", "계약서 오타 하나로 회사에 10억 손해 입히셨네요.", "IT 보안 교육 24시간 연속 수강 대상자입니다.", "오늘부터 당신의 모든 배포 승인은 영구 반려입니다.", "책상 빼세요. 자산 실사 결과 당신 자리는 없습니다.", "기술 지원 업체가 당신 전화는 블랙리스트에 넣었답니다.", "당신의 실무 경력은 오늘부로 '로그 삭제' 되었습니다."
+        // --- 유머러스 IT 빌런 공격 멘트 ---
+        const attackPhrases = [
+            "자산 실사인데 맥북 100대 행방불명!!", "망분리 PC에서 유튜브 프리미엄 접속 적발!", "외주업체 인력이 소스코드 깃허브에 업로드!!", "구매 품의서 단가 오타로 100배 결제!",
+            "IT 거버넌스 무시하고 클라우드 임의 생성!", "감사 전날 로그 데이터 전체 삭제!", "보안성 심의 없이 운영 서버 다이렉트 배포!", "법인카드로 비트코인 채굴기 구매 적발!",
+            "유지보수 업체 사장님이 연락 두절!!", "내부 회계 감사 지적 사항 150건 발생!", "전산실 에어컨 끄고 퇴근하기!", "중요 데이터 DB에 '1234'로 암호화!",
+            "망혼용 케이블 무단 연결(Loop 발생)!!", "라이선스 오남용으로 오라클 형님들 방문!", "보고서 폰트가 굴림체라고 반려!", "금요일 17시 59분에 서버 재부팅!",
+            "부장님 PC에 랜섬웨어 감염시키기!", "출입증 없이 데이터 센터 무단 침입!", "계약서에 업체 직인 대신 내 도장 찍기!", "IT 기획안에 'AI' 단어 안 넣었다고 퇴짜!"
         ];
 
-        let p1 = { x: 120, hp: 100, face: null, name: "테크구매팀" };
-        let p2 = { x: 550, hp: 100, face: null, name: "감사법무팀" };
-        let battleText = { content: "", opacity: 0, x: 0, y: 0 };
-        let isRunning = false;
+        const humiliationPhrases = [
+            "기술적 부채나 갚으러 가시죠.", "당신의 커리어는 오늘부로 'Hard Delete' 되었습니다.", "시말서 양식은 메일로 보냈습니다. 궁서체로 쓰세요.", "거버넌스가 우스워 보이십니까?", "자산 번호 9999번(폐기)으로 등록해 드릴게요."
+        ];
 
-        function resize() { canvas.width = 800; canvas.height = 450; }
-        window.addEventListener('resize', resize);
-        resize();
+        let p1 = { x: 200, y: 400, hp: 100, face: null, state: 'idle', frame: 0 };
+        let p2 = { x: 800, y: 400, hp: 100, face: null, state: 'idle', frame: 0 };
+        let effects = [];
+        let particles = [];
+        let shake = 0;
+        let isFighting = false;
 
-        function syncNames() {
-            p1.name = document.getElementById('p1-name').value || "PLAYER 1";
-            p2.name = document.getElementById('p2-name').value || "PLAYER 2";
-            document.getElementById('lbl-p1-name').innerText = p1.name;
-            document.getElementById('lbl-o-name')?.remove(); // 중복 방지
-            document.getElementById('lbl-p2-name').innerText = p2.name;
-        }
-
-        function loadFile(event, type) {
-            const file = event.target.files[0];
+        function loadImg(e, p) {
             const reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = (ev) => {
                 const img = new Image();
-                img.onload = () => { if(type === 'p1') p1.face = img; else p2.face = img; };
-                img.src = e.target.result;
+                img.onload = () => { if(p === 'p1') p1.face = img; else p2.face = img; };
+                img.src = ev.target.result;
             };
-            reader.readAsDataURL(file);
+            reader.readAsDataURL(e.target.files[0]);
         }
 
-        function drawCharacter(char, isP1) {
-            const centerX = char.x + 75;
-            const centerY = 280;
-            ctx.save();
-            if (!isP1) { ctx.translate(centerX * 2, 0); ctx.scale(-1, 1); }
-            ctx.fillStyle = "#334155";
-            ctx.beginPath();
-            ctx.moveTo(centerX - 40, centerY + 80);
-            ctx.quadraticCurveTo(centerX, centerY + 50, centerX + 40, centerY + 80);
-            ctx.lineTo(centerX + 50, centerY + 150);
-            ctx.lineTo(centerX - 50, centerY + 150);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, 50, 0, Math.PI * 2);
-            ctx.closePath();
-            ctx.clip();
-            if (char.face) ctx.drawImage(char.face, centerX - 50, centerY - 50, 100, 100);
-            else { ctx.fillStyle = "#cbd5e1"; ctx.fillRect(centerX-50, centerY-50, 100, 100); }
-            ctx.restore();
-            ctx.strokeStyle = isP1 ? "#38bdf8" : "#f43f5e";
-            ctx.lineWidth = 4;
-            ctx.beginPath(); ctx.arc(centerX, centerY, 52, 0, Math.PI * 2); ctx.stroke();
+        // --- 이펙트 시스템 (문서 파편 등) ---
+        class Effect {
+            constructor(x, y, type) {
+                this.x = x; this.y = y; this.type = type;
+                this.life = 20;
+                this.text = type === 'doc' ? ["PDF", "Excel", "결재", "반려"][Math.floor(Math.random()*4)] : "";
+            }
+            draw() {
+                ctx.save();
+                if(this.type === 'hit') {
+                    ctx.fillStyle = "white";
+                    ctx.beginPath(); ctx.arc(this.x, this.y, 40 * (this.life/20), 0, Math.PI*2); ctx.fill();
+                } else {
+                    ctx.fillStyle = "#cbd5e1";
+                    ctx.font = "bold 20px Arial";
+                    ctx.fillText(this.text, this.x, this.y - (20 - this.life) * 5);
+                }
+                ctx.restore();
+                this.life--;
+            }
         }
+
+        function spawnHit(x, y) {
+            shake = 15;
+            effects.push(new Effect(x, y, 'hit'));
+            for(let i=0; i<5; i++) effects.push(new Effect(x + Math.random()*100-50, y + Math.random()*100-50, 'doc'));
+        }
+
+        function drawChar(char, isP1) {
+            const flip = isP1 ? 1 : -1;
+            const bob = Math.sin(Date.now() / 200) * 10; // Idle 애니메이션
+            
+            ctx.save();
+            ctx.translate(char.x + 100, char.y + 100);
+            if(!isP1) ctx.scale(-1, 1);
+
+            // 몸체 (KOF 도복 스타일)
+            ctx.fillStyle = isP1 ? "#0ea5e9" : "#e11d48";
+            ctx.beginPath();
+            ctx.moveTo(-50, 150); ctx.lineTo(50, 150); 
+            ctx.lineTo(40, 0); ctx.lineTo(-40, 0); ctx.fill();
+
+            // 얼굴 원형
+            ctx.save();
+            ctx.beginPath(); ctx.arc(0, bob - 50, 60, 0, Math.PI*2); ctx.clip();
+            if(char.face) ctx.drawImage(char.face, -60, bob - 110, 120, 120);
+            else { ctx.fillStyle = "#f1f5f9"; ctx.fill(); }
+            ctx.restore();
+
+            // 테두리
+            ctx.strokeStyle = "white"; ctx.lineWidth = 4;
+            ctx.beginPath(); ctx.arc(0, bob - 50, 62, 0, Math.PI*2); ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        async function attack(atk, def, isP1) {
+            const startX = atk.x;
+            const targetX = isP1 ? def.x - 150 : def.x + 150;
+            const msg = attackPhrases[Math.floor(Math.random()*attackPhrases.length)];
+
+            // 멘트 표시
+            battleMsg = { text: msg, x: atk.x + 100, y: atk.y - 100, life: 60 };
+
+            // 1. 기 모으기 (KOF 느낌)
+            atk.x -= 30 * (isP1 ? 1 : -1);
+            await new Promise(r => setTimeout(r, 200));
+
+            // 2. 파파팍! 돌진 공격
+            for(let i=0; i<5; i++) {
+                atk.x += (targetX - atk.x) * 0.5;
+                await new Promise(r => setTimeout(r, 30));
+            }
+
+            // 3. 타격 임팩트
+            def.hp -= Math.floor(Math.random()*15) + 10;
+            document.getElementById(`hp-${isP1?'p2':'p1'}`).style.width = Math.max(0, (isP1?p2.hp:p1.hp)) + "%";
+            spawnHit(def.x + 100, def.y + 50);
+            
+            await new Promise(r => setTimeout(r, 1000)); // 멘트 읽는 시간
+
+            // 4. 복귀
+            atk.x = startX;
+        }
+
+        let battleMsg = { text: "", x: 0, y: 0, life: 0 };
 
         async function startBattle() {
-            if (isRunning) return;
-            isRunning = true;
+            if(isFighting) return;
+            isFighting = true;
             p1.hp = 100; p2.hp = 100;
-            updateUI();
-            while (p1.hp > 0 && p2.hp > 0) {
+            p1.x = 200; p2.x = 800;
+            syncUI();
+
+            while(p1.hp > 0 && p2.hp > 0) {
                 await attack(p1, p2, true);
-                if (p2.hp <= 0) break;
-                await new Promise(r => setTimeout(r, 800));
+                if(p2.hp <= 0) break;
+                await new Promise(r => setTimeout(r, 500));
                 await attack(p2, p1, false);
-                await new Promise(r => setTimeout(r, 800));
+                await new Promise(r => setTimeout(r, 500));
             }
-            const winner = p1.hp > 0 ? p1.name : p2.name;
-            const loser = p1.hp > 0 ? p2.name : p1.name;
-            const insult = humiliationPhrases[Math.floor(Math.random() * humiliationPhrases.length)];
-            alert(`🏆 승리: ${winner}\n💀 패배자(${loser})에게 한마디:\n"${insult}"`);
-            isRunning = false;
+
+            const winner = p1.hp > 0 ? document.getElementById('name1').value : document.getElementById('name2').value;
+            const insult = humiliationPhrases[Math.floor(Math.random()*humiliationPhrases.length)];
+            alert(`WINNER: ${winner}\n\n"${insult}"`);
+            isFighting = false;
         }
 
-        async function attack(attacker, target, isP1) {
-            battleText.content = attackPhrases[Math.floor(Math.random() * attackPhrases.length)];
-            battleText.x = attacker.x + 75; battleText.y = 180; battleText.opacity = 1;
-            const originalX = attacker.x;
-            const targetX = isP1 ? target.x - 100 : target.x + 100;
-            for(let i=0; i<12; i++) { attacker.x += (targetX - attacker.x) * 0.4; await new Promise(r => setTimeout(r, 20)); }
-            target.hp -= Math.floor(Math.random() * 25) + 10;
-            if(target.hp < 0) target.hp = 0;
-            updateUI();
-            await new Promise(r => setTimeout(r, 1200));
-            for(let i=0; i<15; i++) { attacker.x += (originalX - attacker.x) * 0.3; battleText.opacity -= 0.07; await new Promise(r => setTimeout(r, 25)); }
-            attacker.x = originalX; battleText.opacity = 0;
+        function syncUI() {
+            document.getElementById('hp-p1').style.width = p1.hp + "%";
+            document.getElementById('hp-p2').style.width = p2.hp + "%";
+            document.getElementById('p1-tag').innerText = document.getElementById('name1').value;
+            document.getElementById('p2-tag').innerText = document.getElementById('name2').value;
         }
 
-        function updateUI() {
-            document.getElementById('hp-p1-fill').style.width = p1.hp + "%";
-            document.getElementById('hp-p2-fill').style.width = p2.hp + "%";
-        }
-
-        function draw() {
+        function gameLoop() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawCharacter(p1, true);
-            drawCharacter(p2, false);
-            if (battleText.opacity > 0) {
-                ctx.save();
-                ctx.globalAlpha = battleText.opacity;
-                ctx.font = "bold 24px Jua";
-                ctx.textAlign = "center";
-                const tw = ctx.measureText(battleText.content).width;
-                ctx.fillStyle = "rgba(0,0,0,0.6)";
-                ctx.beginPath();
-                ctx.roundRect(battleText.x - (tw/2) - 15, battleText.y - 30, tw + 30, 45, 10);
-                ctx.fill();
-                ctx.fillStyle = "#ffff00";
-                ctx.fillText(battleText.content, battleText.x, battleText.y);
-                ctx.restore();
+            
+            // 화면 흔들림
+            if(shake > 0) {
+                ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2);
+                shake *= 0.9;
             }
-            requestAnimationFrame(draw);
+
+            // 배경 바닥
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(0, 550, canvas.width, 125);
+
+            drawChar(p1, true);
+            drawChar(p2, false);
+
+            // 이펙트 처리
+            effects = effects.filter(e => e.life > 0);
+            effects.forEach(e => e.draw());
+
+            // 멘트 처리
+            if(battleMsg.life > 0) {
+                ctx.fillStyle = "yellow";
+                ctx.font = "italic bold 35px Jua";
+                ctx.textAlign = "center";
+                ctx.strokeStyle = "black"; ctx.lineWidth = 6;
+                ctx.strokeText(battleMsg.text, battleMsg.x, battleMsg.y);
+                ctx.fillText(battleMsg.text, battleMsg.x, battleMsg.y);
+                battleMsg.life--;
+            }
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            requestAnimationFrame(gameLoop);
         }
-        draw();
+
+        syncUI();
+        gameLoop();
     </script>
 </body>
 </html>
