@@ -3,213 +3,114 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>THE KING OF IT-COMPLIANCE '26</title>
+    <title>THE KING OF IT 2026 - Final</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap');
         
-        :root {
-            --game-bg: #0f172a;
-        }
-
+        :root { --bg: #020617; }
         body { 
-            font-family: 'Jua', sans-serif; 
-            background: var(--game-bg); 
-            color: white; 
-            margin: 0;
-            padding: 0;
-            overflow: hidden; /* 스크롤 방지 */
-            height: 100dvh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            font-family: 'Jua', sans-serif; background: var(--bg); color: white; 
+            margin: 0; padding: 0; overflow: hidden; height: 100dvh;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
 
-        /* 전체 컨테이너: 화면 비율 유지 및 중앙 정렬 */
-        .game-outer-container {
-            width: 100%;
-            height: 100%;
-            max-width: 1000px;
-            display: flex;
-            flex-direction: column;
-            padding: env(safe-area-inset-top) 10px env(safe-area-inset-bottom) 10px;
+        /* 메인 컨테이너: 화면을 벗어나지 않게 제약 */
+        .game-wrapper {
+            width: 100%; height: 100%;
+            max-width: 1200px; max-height: 100dvh;
+            display: flex; flex-direction: column;
+            padding: env(safe-area-inset-top) 15px env(safe-area-inset-bottom) 15px;
             box-sizing: border-box;
         }
 
-        /* 헤더 영역 */
-        .game-header {
-            flex: 0 0 auto;
-            padding: 10px 0;
-            text-align: center;
-        }
+        /* 상단 타이틀 */
+        .header { flex: 0 0 auto; padding: 10px 0; text-align: center; }
 
-        /* 게임 아레나: 가로 세로 비율 유지하며 꽉 차게 */
-        .arena-wrapper {
+        /* 아레나 박스: 16:9 비율 강제 유지 및 잘림 방지 */
+        .arena-container {
             position: relative;
             flex: 1 1 auto;
             width: 100%;
-            background: #1e293b;
-            border: 4px solid #334155;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+        }
+
+        .arena-inner {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            max-height: 100%; /* 부모 높이를 넘지 않게 */
+            background: #1e293b;
+            border: 4px solid #334155;
+            border-radius: 12px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.8);
         }
 
         canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: contain; /* 비율 유지 */
+            width: 100%; height: 100%;
+            display: block; border-radius: 10px;
         }
 
-        /* HP 시스템 */
-        .hp-system {
-            position: absolute;
-            top: 5%;
-            left: 0;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 10px;
-            z-index: 50;
-            padding: 0 5%;
+        /* 체력바 및 타이머 */
+        .ui-overlay {
+            position: absolute; top: 5%; width: 100%;
+            display: flex; justify-content: center; align-items: center;
+            gap: 10px; padding: 0 5%; pointer-events: none;
         }
-
-        .hp-bar {
-            flex: 1;
-            height: 15px;
-            background: #450a0a;
-            border: 2px solid #fff;
-            transform: skew(-15deg);
-            overflow: hidden;
-        }
-
-        .hp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #facc15, #ef4444);
-            transition: width 0.3s ease;
-        }
-
-        .timer-box {
-            width: 45px;
-            height: 45px;
-            background: #000;
-            border: 2px solid #facc15;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #facc15;
-            font-size: 1.2rem;
-            font-family: 'Black Han Sans';
-        }
+        .hp-bar { flex: 1; height: clamp(10px, 3vh, 25px); background: #450a0a; border: 2px solid #fff; transform: skew(-15deg); overflow: hidden; }
+        .hp-fill { height: 100%; background: linear-gradient(90deg, #facc15, #ef4444); transition: width 0.3s; }
+        .timer-val { width: clamp(40px, 8vh, 60px); height: clamp(40px, 8vh, 60px); background: #000; border: 2px solid #facc15; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #facc15; font-size: 1.2rem; font-family: 'Black Han Sans'; }
 
         /* 컨트롤 패널 */
-        .control-panel {
-            flex: 0 0 auto;
-            width: 100%;
-            padding: 15px 0;
-            display: grid;
-            grid-template-cols: 1fr auto 1fr;
-            gap: 10px;
-            align-items: center;
-        }
+        .controls { flex: 0 0 auto; padding: 15px 0; display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
+        .btn-sm { background: #334155; border-bottom: 3px solid #1e293b; padding: 8px 5px; border-radius: 8px; font-size: 0.7rem; width: 100%; }
+        .fight-btn { background: #ef4444; padding: 12px 30px; border-radius: 12px; font-family: 'Black Han Sans'; font-size: clamp(1.2rem, 4vw, 1.8rem); box-shadow: 0 5px 0 #991b1b; }
+        .fight-btn.disabled { opacity: 0.3; transform: translateY(5px); box-shadow: none; }
 
-        .btn-action {
-            background: #334155;
-            border: 1px solid #475569;
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            width: 100%;
-        }
-
-        .fight-btn {
-            background: #ef4444;
-            padding: 10px 25px;
-            border-radius: 12px;
-            font-family: 'Black Han Sans';
-            font-size: 1.5rem;
-            box-shadow: 0 4px 0 #991b1b;
-        }
-
-        .fight-btn.disabled {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
-        /* 모달 최적화 */
-        #cropModal {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 1000;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        #cropCanvas {
-            max-width: 80%;
-            max-height: 50vh;
-            border: 2px solid #facc15;
-            border-radius: 50%;
-            touch-action: none;
-        }
-
-        @media (min-width: 768px) {
-            .hp-bar { height: 25px; }
-            .timer-box { width: 60px; height: 60px; font-size: 1.8rem; }
-            .btn-action { font-size: 0.9rem; }
-        }
+        /* 모달 (크롭) */
+        #cropModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
+        #cropCanvas { max-width: 80%; max-height: 40vh; border-radius: 50%; border: 2px solid #facc15; touch-action: none; }
     </style>
 </head>
 <body>
 
     <div id="cropModal">
-        <h2 class="text-lg mb-4 text-yellow-400">얼굴을 원 안에 맞춰주세요</h2>
         <canvas id="cropCanvas" width="300" height="300"></canvas>
-        <input type="range" id="zoomRange" min="0.1" max="3" step="0.05" value="1" class="w-64 my-6">
+        <input type="range" id="zoomRange" min="0.1" max="3" step="0.05" value="1" class="w-64 my-8">
         <div class="flex gap-4">
-            <button onclick="closeModal()" class="bg-slate-600 px-6 py-2 rounded-lg">취소</button>
-            <button onclick="saveCrop()" class="bg-green-600 px-10 py-2 rounded-lg font-bold">완료</button>
+            <button onclick="saveCrop()" class="bg-green-600 px-12 py-3 rounded-xl font-bold">완료</button>
         </div>
     </div>
 
-    <div class="game-outer-container">
-        <div class="game-header">
-            <h1 class="text-2xl md:text-3xl font-black text-yellow-400 italic leading-none">THE KING OF IT</h1>
-            <p class="text-[10px] md:text-xs text-sky-400 tracking-widest uppercase">Ultimate Match 2026</p>
+    <div class="game-wrapper">
+        <div class="header">
+            <h1 class="text-xl md:text-3xl font-black text-yellow-400 italic">THE KING OF IT</h1>
+            <p class="text-[10px] text-sky-400 tracking-widest">COMPLIANCE ULTIMATE MATCH 2026</p>
         </div>
 
-        <div class="arena-wrapper" id="arena">
-            <div class="hp-system">
-                <div class="hp-bar"><div id="hp1" class="hp-fill" style="width:100%"></div></div>
-                <div class="timer-box" id="timer">99</div>
-                <div class="hp-bar"><div id="hp2" class="hp-fill" style="width:100%"></div></div>
+        <div class="arena-container">
+            <div class="arena-inner">
+                <div class="ui-overlay">
+                    <div class="hp-bar"><div id="hp1" class="hp-fill" style="width:100%"></div></div>
+                    <div class="timer-val">99</div>
+                    <div class="hp-bar"><div id="hp2" class="hp-fill" style="width:100%"></div></div>
+                </div>
+                <canvas id="gameCanvas"></canvas>
             </div>
-            <canvas id="gameCanvas"></canvas>
         </div>
 
-        <div class="control-panel">
+        <div class="controls">
             <div class="flex flex-col gap-1">
-                <span id="nick1" class="text-[10px] text-sky-400 font-bold truncate">P1: 준비중</span>
-                <button onclick="openUpload('p1')" class="btn-action">FACE</button>
-                <button id="rec1" onclick="recordVoice('p1')" class="btn-action">REC</button>
+                <span id="n1" class="text-[9px] text-sky-400 font-bold truncate">PLAYER 1</span>
+                <button onclick="openUpload('p1')" class="btn-sm">UPLOAD</button>
             </div>
-            
-            <button id="fightBtn" onclick="startBattle()" class="fight-btn disabled">FIGHT</button>
-
+            <button id="fightBtn" onclick="startBattle()" class="fight-btn disabled">FIGHT!</button>
             <div class="flex flex-col gap-1 text-right">
-                <span id="nick2" class="text-[10px] text-rose-500 font-bold truncate">P2: 준비중</span>
-                <button onclick="openUpload('p2')" class="btn-action">FACE</button>
-                <button id="rec2" onclick="recordVoice('p2')" class="btn-action">REC</button>
+                <span id="n2" class="text-[9px] text-rose-500 font-bold truncate">PLAYER 2</span>
+                <button onclick="openUpload('p2')" class="btn-sm">UPLOAD</button>
             </div>
         </div>
     </div>
@@ -219,57 +120,32 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const arena = document.getElementById('arena');
+        // 내부 논리 좌표계 고정
+        const V_WIDTH = 1200;
+        const V_HEIGHT = 675;
+        canvas.width = V_WIDTH;
+        canvas.height = V_HEIGHT;
 
-        // 캔버스 사이즈 최적화 함수
-        function resize() {
-            const rect = arena.getBoundingClientRect();
-            // 고해상도 대응 (DPR)
-            const dpr = window.devicePixelRatio || 1;
-            canvas.width = rect.width * dpr;
-            canvas.height = rect.height * dpr;
-            ctx.scale(dpr, dpr);
-            // 가상 좌표계 설정 (1200x675 기준 작업)
-            canvas.virtualWidth = 1200;
-            canvas.virtualHeight = 675;
-            canvas.viewScale = rect.width / 1200;
-        }
-        window.addEventListener('resize', resize);
-        resize();
+        const phrases = ["운영DB 조건절 없이 삭제!", "퇴근 5분전 회의소집!", "법카한도 초과!", "맥북에 커피 쏟음!", "인수인계 문서 0바이트!", "주말 장애 대응!", "슬랙 닉네임 실수!", "배포 직후 화이트스크린!"];
+        const nicks = ["문서반려동물", "갑질왕", "애는착해요", "법카수호자", "야근요정", "보고서살인마"];
 
-        // [이전 멘트 100개 및 캐릭터 물리 설정 로직 동일하게 포함...]
-        const attackPhrases = ["법카한도 초과 보라짱한테 연락받기", "망분리 PC로 유튜브 적발", "퇴근직전 회의소집", "운영DB WHERE절 없이 삭제", "깃허브 API키 푸시", "맥북에 커피쏟기", "비밀번호 강제변경", "연차날 워크숍", "내 코드 TO-DO 2000개 적발", "SSL 인증서 만료"];
-        const winPhrases = ["월급 루팡권 획득!", "남의 연차 승인권!", "팀장님 카드 무단사용권!"];
-        const nicks = ["문서'반려'동물", "갑질왕", "애는착해요", "법카수호자", "야근요정", "엑셀노가다", "보고서살인마"];
+        let p1 = { x: 250, y: 350, hp: 100, face: null, nick: "P1", targetX: 250 };
+        let p2 = { x: 950, y: 350, hp: 100, face: null, nick: "P2", targetX: 950 };
+        let activeP = null, isFighting = false, shake = 0, msg = { text: "", life: 0 };
 
-        let p1 = { x: 200, y: 350, hp: 100, face: null, nick: "PLAYER 1", targetX: 200 };
-        let p2 = { x: 800, y: 350, hp: 100, face: null, nick: "PLAYER 2", targetX: 800 };
-        let activeP = null;
-        let isFighting = false;
-        let battleMsg = { text: "", x: 0, y: 0, life: 0 };
-        let shake = 0;
+        // 크롭 관련
+        const cCanvas = document.getElementById('cropCanvas');
+        const cctx = cCanvas.getContext('2d');
+        let rawImg = null, cropPos = { x: 150, y: 150 }, isDragging = false, lastX, lastY;
 
-        // 크롭 로직 (터치 대응 추가)
-        const cropCanvas = document.getElementById('cropCanvas');
-        const cctx = cropCanvas.getContext('2d');
-        let rawImg = null, cropPos = { x: 150, y: 150 }, isDragging = false;
-
-        function openUpload(p) {
-            activeP = p === 'p1' ? p1 : p2;
-            document.getElementById('fileInput').click();
-        }
+        function openUpload(p) { activeP = (p === 'p1' ? p1 : p2); document.getElementById('fileInput').click(); }
 
         document.getElementById('fileInput').onchange = (e) => {
             const file = e.target.files[0];
-            if(!file) return;
             const reader = new FileReader();
             reader.onload = (ev) => {
                 rawImg = new Image();
-                rawImg.onload = () => {
-                    document.getElementById('cropModal').style.display = 'flex';
-                    cropPos = { x: 150, y: 150 };
-                    drawCrop();
-                };
+                rawImg.onload = () => { document.getElementById('cropModal').style.display = 'flex'; drawCrop(); };
                 rawImg.src = ev.target.result;
             };
             reader.readAsDataURL(file);
@@ -277,144 +153,97 @@
 
         function drawCrop() {
             cctx.clearRect(0, 0, 300, 300);
-            const zoom = document.getElementById('zoomRange').value;
-            const w = rawImg.width * zoom, h = rawImg.height * zoom;
-            cctx.drawImage(rawImg, cropPos.x - w/2, cropPos.y - h/2, w, h);
-            cctx.strokeStyle = '#facc15'; cctx.lineWidth = 3;
-            cctx.beginPath(); cctx.arc(150, 150, 148, 0, Math.PI*2); cctx.stroke();
+            const z = document.getElementById('zoomRange').value;
+            cctx.drawImage(rawImg, cropPos.x - (rawImg.width*z)/2, cropPos.y - (rawImg.height*z)/2, rawImg.width*z, rawImg.height*z);
+            cctx.strokeStyle = '#facc15'; cctx.lineWidth = 3; cctx.beginPath(); cctx.arc(150, 150, 148, 0, Math.PI*2); cctx.stroke();
         }
 
-        // 터치 및 마우스 드래그 통합
-        const startDrag = () => isDragging = true;
-        const stopDrag = () => isDragging = false;
-        const moveDrag = (e) => {
+        const handleStart = (e) => { isDragging = true; const t = e.touches ? e.touches[0] : e; lastX = t.clientX; lastY = t.clientY; };
+        const handleMove = (e) => {
             if(!isDragging) return;
-            const movementX = e.movementX || (e.touches && e.touches[0].clientX - lastX) || 0;
-            const movementY = e.movementY || (e.touches && e.touches[0].clientY - lastY) || 0;
-            cropPos.x += movementX; cropPos.y += movementY;
-            if(e.touches) { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; }
-            drawCrop();
+            const t = e.touches ? e.touches[0] : e;
+            cropPos.x += (t.clientX - lastX); cropPos.y += (t.clientY - lastY);
+            lastX = t.clientX; lastY = t.clientY; drawCrop();
         };
-        let lastX, lastY;
-        cropCanvas.addEventListener('mousedown', startDrag);
-        window.addEventListener('mouseup', stopDrag);
-        window.addEventListener('mousemove', moveDrag);
-        cropCanvas.addEventListener('touchstart', (e) => { lastX = e.touches[0].clientX; lastY = e.touches[0].clientY; startDrag(); });
-        window.addEventListener('touchend', stopDrag);
-        window.addEventListener('touchmove', moveDrag);
+        cCanvas.addEventListener('mousedown', handleStart); cCanvas.addEventListener('touchstart', handleStart);
+        window.addEventListener('mousemove', handleMove); window.addEventListener('touchmove', handleMove);
+        window.addEventListener('mouseup', () => isDragging = false); window.addEventListener('touchend', () => isDragging = false);
 
         function saveCrop() {
-            const temp = document.createElement('canvas');
-            temp.width = 200; temp.height = 200;
+            const temp = document.createElement('canvas'); temp.width = 200; temp.height = 200;
             const tCtx = temp.getContext('2d');
             tCtx.beginPath(); tCtx.arc(100, 100, 100, 0, Math.PI*2); tCtx.clip();
-            tCtx.drawImage(cropCanvas, 50, 50, 200, 200, 0, 0, 200, 200);
-            activeP.face = new Image();
-            activeP.face.src = temp.toDataURL();
+            tCtx.drawImage(cCanvas, 50, 50, 200, 200, 0, 0, 200, 200);
+            activeP.face = new Image(); activeP.face.src = temp.toDataURL();
             activeP.nick = nicks[Math.floor(Math.random()*nicks.length)];
-            document.getElementById(activeP === p1 ? 'nick1' : 'nick2').innerText = activeP.nick;
-            closeModal();
+            document.getElementById(activeP === p1 ? 'n1' : 'n2').innerText = activeP.nick;
+            document.getElementById('cropModal').style.display = 'none';
             if(p1.face && p2.face) document.getElementById('fightBtn').classList.remove('disabled');
         }
 
-        function closeModal() { document.getElementById('cropModal').style.display = 'none'; }
-
-        // 게임 렌더링
         function drawChar(p, isP1) {
-            const s = canvas.viewScale; // 현재 화면 크기에 따른 스케일
-            const time = Date.now() / 200;
-            const idleY = Math.sin(time) * 10;
-            
+            const idle = Math.sin(Date.now() / 200) * 10;
             p.x += (p.targetX - p.x) * 0.2;
-
             ctx.save();
-            ctx.scale(s, s); // 전체 스케일 조정
-            ctx.translate(p.x + 100, p.y + 100 + idleY);
+            ctx.translate(p.x, p.y + idle);
             if(!isP1) ctx.scale(-1, 1);
 
-            // 몸통/다리
+            // 몸체
             ctx.fillStyle = isP1 ? "#0ea5e9" : "#f43f5e";
-            ctx.fillRect(-30, 20, 60, 80);
-            ctx.fillRect(-25, 100, 20, 40); ctx.fillRect(5, 100, 20, 40);
+            ctx.fillRect(-30, 20, 60, 80); // 몸
+            ctx.fillRect(-25, 100, 20, 40); ctx.fillRect(5, 100, 20, 40); // 다리
 
             // 얼굴
             if(p.face) {
-                ctx.save();
-                ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.clip();
-                ctx.drawImage(p.face, -70, -130, 140, 140);
-                ctx.restore();
+                ctx.save(); ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.clip();
+                ctx.drawImage(p.face, -70, -130, 140, 140); ctx.restore();
             } else {
                 ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.fill();
             }
-            
-            // 이름
-            ctx.scale(isP1?1:-1, 1);
-            ctx.fillStyle = "white"; ctx.font = "bold 24px Jua"; ctx.textAlign = "center";
-            ctx.fillText(p.nick, 0, 180);
             ctx.restore();
         }
 
-        async function attack(atk, def, isP1) {
-            battleMsg = { text: attackPhrases[Math.floor(Math.random()*attackPhrases.length)], x: 600, y: 200, life: 90 };
-            atk.targetX = isP1 ? 100 : 900;
-            await new Promise(r => setTimeout(r, 200));
-            atk.targetX = isP1 ? def.x - 60 : def.x + 60;
-            shake = 15;
-            def.hp = Math.max(0, def.hp - (15 + Math.random()*10));
-            document.getElementById(isP1 ? 'hp2' : 'hp1').style.width = (isP1 ? p2.hp : p1.hp) + "%";
-            await new Promise(r => setTimeout(r, 400));
-            atk.targetX = isP1 ? 200 : 800;
-        }
-
         async function startBattle() {
-            if(isFighting) return;
-            isFighting = true;
+            if(isFighting) return; isFighting = true;
             document.getElementById('fightBtn').classList.add('disabled');
             while(p1.hp > 0 && p2.hp > 0) {
-                await attack(p1, p2, true);
-                if(p2.hp <= 0) break;
+                await doAtk(p1, p2, true); if(p2.hp <= 0) break;
                 await new Promise(r => setTimeout(r, 600));
-                await attack(p2, p1, false);
+                await doAtk(p2, p1, false);
                 await new Promise(r => setTimeout(r, 600));
             }
-            const winMsg = winPhrases[Math.floor(Math.random()*winPhrases.length)];
-            alert(`K.O! 승리: ${p1.hp>0?p1.nick:p2.nick}\n보상: ${winMsg}`);
+            alert(`K.O! 승리: ${p1.hp>0?p1.nick:p2.nick}\n보상: 연차 결재 자동 승인권!`);
             location.reload();
         }
 
+        async function doAtk(a, d, isP1) {
+            msg = { text: phrases[Math.floor(Math.random()*phrases.length)], life: 80 };
+            a.targetX = isP1 ? 150 : 1050; await new Promise(r => setTimeout(r, 200));
+            a.targetX = isP1 ? d.x - 80 : d.x + 80; shake = 15;
+            d.hp = Math.max(0, d.hp - (15 + Math.random()*15));
+            document.getElementById(isP1 ? 'hp2' : 'hp1').style.width = (isP1 ? p2.hp : p1.hp) + "%";
+            await new Promise(r => setTimeout(r, 400));
+            a.targetX = isP1 ? 250 : 950;
+        }
+
         function loop() {
-            const s = canvas.viewScale;
-            ctx.clearRect(0, 0, canvas.virtualWidth * s, canvas.virtualHeight * s);
+            ctx.clearRect(0, 0, V_WIDTH, V_HEIGHT);
+            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2); shake *= 0.9; }
             
-            if(shake > 0) {
-                ctx.save();
-                ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2);
-                shake *= 0.9;
-            }
-
             // 바닥
-            ctx.fillStyle = "#0f172a";
-            ctx.fillRect(0, 500 * s, 1200 * s, 200 * s);
+            ctx.fillStyle = "#0f172a"; ctx.fillRect(0, 500, V_WIDTH, 175);
+            
+            drawChar(p1, true); drawChar(p2, false);
 
-            drawChar(p1, true);
-            drawChar(p2, false);
-
-            if(battleMsg.life > 0) {
-                ctx.save();
-                ctx.scale(s, s);
-                ctx.fillStyle = "#facc15"; ctx.font = "bold 40px Jua"; ctx.textAlign = "center";
+            if(msg.life > 0) {
+                ctx.fillStyle = "#facc15"; ctx.font = "bold 45px Jua"; ctx.textAlign = "center";
                 ctx.shadowBlur = 10; ctx.shadowColor = "black";
-                ctx.fillText(battleMsg.text, battleMsg.x, battleMsg.y);
-                ctx.restore();
-                battleMsg.life--;
+                ctx.fillText(msg.text, 600, 220); msg.life--;
             }
-
             if(shake > 0) ctx.restore();
             requestAnimationFrame(loop);
         }
         loop();
-
-        function recordVoice(p) { alert("기합 녹음 기능은 HTTPS 환경에서 작동합니다."); }
     </script>
 </body>
 </html>
