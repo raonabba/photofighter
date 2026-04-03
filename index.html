@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포토 파이터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        :root {
+            --neon-blue: #00f0ff;
+            --neon-red: #ff0033;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', system-ui;
+            background: linear-gradient(180deg, #0a0a2e, #1a0033);
+            color: white;
+            overflow: hidden;
+        }
+        
+        .arena {
+            position: relative;
+            width: 100%;
+            max-width: 900px;
+            height: 420px;
+            margin: 0 auto;
+            background: radial-gradient(circle at center, #1a0033 0%, #0a0a2e 100%);
+            border: 8px solid #00f0ff;
+            border-radius: 20px;
+            box-shadow: 
+                0 0 40px #00f0ff,
+                0 0 80px #ff0033,
+                inset 0 0 60px rgba(0, 240, 255, 0.3);
+            overflow: hidden;
+        }
+        
+        .fighter {
+            position: absolute;
+            bottom: 60px;
+            width: 220px;
+            height: 280px;
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 10;
+        }
+        
+        .fighter.left { left: 80px; }
+        .fighter.right { right: 80px; transform: scaleX(-1); }
+        
+        .fighter img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 6px solid #00f0ff;
+            border-radius: 15px;
+            box-shadow: 0 0 30px #00f0ff;
+            image-rendering: pixelated;
+        }
+        
+        .hp-bar {
+            position: absolute;
+            top: -35px;
+            width: 100%;
+            height: 18px;
+            background: #111;
+            border: 4px solid #00f0ff;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #00cc44);
+            transition: width 0.6s ease;
+            box-shadow: 0 0 15px #00ff88;
+        }
+        
+        .mp-bar {
+            position: absolute;
+            top: -15px;
+            width: 100%;
+            height: 12px;
+            background: #111;
+            border: 4px solid #00f0ff;
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        
+        .mp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ccff, #0088ff);
+            transition: width 0.6s ease;
+            box-shadow: 0 0 15px #00ccff;
+        }
+        
+        .attack-effect {
+            position: absolute;
+            pointer-events: none;
+            animation: attackAnim 800ms ease forwards;
+            z-index: 30;
+        }
+        
+        @keyframes attackAnim {
+            0% { transform: scale(0.3) rotate(0deg); opacity: 1; }
+            70% { transform: scale(1.4) rotate(360deg); }
+            100% { transform: scale(0) rotate(720deg); opacity: 0; }
+        }
+        
+        .damage {
+            position: absolute;
+            color: #ff0033;
+            font-size: 42px;
+            font-weight: bold;
+            text-shadow: 0 0 20px #ff0033;
+            animation: damageFloat 1200ms ease forwards;
+            z-index: 40;
+            pointer-events: none;
+        }
+        
+        @keyframes damageFloat {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-120px); opacity: 0; }
+        }
+        
+        .shake {
+            animation: shake 400ms ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+            20%, 40%, 60%, 80% { transform: translateX(8px); }
+        }
+        
+        .beam {
+            position: absolute;
+            height: 30px;
+            background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+            box-shadow: 0 0 60px #00f0ff;
+            animation: beamFly 900ms linear forwards;
+        }
+        
+        .log {
+            font-size: 18px;
+            text-shadow: 0 0 10px #ff0033;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <div class="text-center py-4 border-b border-[#00f0ff]">
+        <h1 class="text-5xl tracking-widest text-[#00f0ff] drop-shadow-[0_0_20px_#00f0ff]">📸 포토 파이터</h1>
+        <p class="text-[#ff0033] text-xl mt-1">사진으로 싸우는 궁극의 대결</p>
+    </div>
+
+    <div class="flex-1 flex items-center justify-center p-6">
+        <div class="arena" id="arena">
+            
+            <!-- 왼쪽 파이터 (플레이어) -->
+            <div class="fighter left" id="player-container">
+                <div class="hp-bar"><div class="hp-fill" id="player-hp" style="width: 100%"></div></div>
+                <div class="mp-bar"><div class="mp-fill" id="player-mp" style="width: 100%"></div></div>
+                <img id="player-img" src="https://picsum.photos/id/1015/600/800" alt="플레이어" class="rounded-2xl">
+                <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-2xl font-bold text-white drop-shadow-lg" id="player-name">YOU</div>
+            </div>
+
+            <!-- 오른쪽 파이터 (상대) -->
+            <div class="fighter right" id="opponent-container">
+                <div class="hp-bar"><div class="hp-fill" id="opponent-hp" style="width: 100%"></div></div>
+                <div class="mp-bar"><div class="mp-fill" id="opponent-mp" style="width: 100%"></div></div>
+                <img id="opponent-img" src="https://picsum.photos/id/201/600/800" alt="상대" class="rounded-2xl">
+                <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-2xl font-bold text-white drop-shadow-lg" id="opponent-name">RIVAL</div>
+            </div>
+
+            <!-- 전투 로그 -->
+            <div id="battle-log" class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md text-white text-center px-8 py-3 rounded-3xl max-w-md border-2 border-[#00f0ff] log"></div>
+
+            <!-- 중앙 공격 효과 레이어 -->
+            <div id="effect-layer" class="absolute inset-0 pointer-events-none"></div>
+        </div>
+    </div>
+
+    <!-- 컨트롤 패널 -->
+    <div class="bg-black/80 border-t-4 border-[#00f0ff] p-6">
+        <div class="max-w-3xl mx-auto flex flex-col md:flex-row gap-4">
+            
+            <!-- 능력치 표시 -->
+            <div class="flex-1 bg-[#1a0033] p-4 rounded-2xl border border-[#00f0ff]">
+                <div class="flex justify-between mb-3">
+                    <div>
+                        <span class="text-[#00f0ff]">플레이어</span><br>
+                        <span id="player-stats" class="text-sm">HP 120 / MP 85 / ATK 68 / DEF 52</span>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-[#ff0033]">상대</span><br>
+                        <span id="opponent-stats" class="text-sm">HP 135 / MP 92 / ATK 75 / DEF 48</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 버튼들 -->
+            <div class="flex-1 flex gap-3 items-center justify-center">
+                <button onclick="startBattle()" 
+                        class="px-10 py-5 bg-gradient-to-r from-[#ff0033] to-[#00f0ff] hover:brightness-110 text-3xl font-bold rounded-3xl shadow-[0_0_30px_#ff0033] transition-all active:scale-95">
+                    ⚔️ 전투 시작
+                </button>
+                
+                <button onclick="resetBattle()" 
+                        class="px-8 py-5 bg-white/10 hover:bg-white/20 text-white text-xl rounded-3xl border-2 border-white/30">
+                    🔄 재시작
+                </button>
+            </div>
+
+            <!-- 사진 업로드 -->
+            <div class="flex-1 flex gap-2">
+                <div class="flex-1">
+                    <input type="file" id="player-upload" accept="image/*" class="hidden" onchange="loadPlayerPhoto(event)">
+                    <button onclick="document.getElementById('player-upload').click()" 
+                            class="w-full h-14 bg-[#00f0ff] text-black hover:bg-[#00ccff] font-bold rounded-2xl text-lg flex items-center justify-center gap-2">
+                        📸 내 사진 변경
+                    </button>
+                </div>
+                <div class="flex-1">
+                    <input type="file" id="opponent-upload" accept="image/*" class="hidden" onchange="loadOpponentPhoto(event)">
+                    <button onclick="document.getElementById('opponent-upload').click()" 
+                            class="w-full h-14 bg-[#ff0033] text-white hover:bg-[#cc0022] font-bold rounded-2xl text-lg flex items-center justify-center gap-2">
+                        📸 상대 사진 변경
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ====================== 게임 데이터 ======================
+        let player = {
+            hp: 120,
+            maxHp: 120,
+            mp: 85,
+            maxMp: 85,
+            atk: 68,
+            def: 52,
+            name: "YOU"
+        };
+        
+        let opponent = {
+            hp: 135,
+            maxHp: 135,
+            mp: 92,
+            maxMp: 92,
+            atk: 75,
+            def: 48,
+            name: "RIVAL"
+        };
+        
+        // 공격 리스트 (랜덤하게 사용)
+        const attacks = [
+            { name: "주먹 지르기", type: "punch", damageMod: 1.1, emoji: "👊", color: "#ff9900" },
+            { name: "발차기", type: "kick", damageMod: 1.3, emoji: "🦵", color: "#00ff88" },
+            { name: "박치기", type: "headbutt", damageMod: 1.4, emoji: "💥", color: "#ff0033" },
+            { name: "에너지파", type: "beam", damageMod: 1.6, emoji: "🌟", color: "#00f0ff" },
+            { name: "권총 쏘기", type: "gun", damageMod: 1.2, emoji: "🔫", color: "#ffff00" },
+            { name: "회전 킥", type: "spin", damageMod: 1.5, emoji: "🌀", color: "#ff00ff" },
+            { name: "필살기", type: "ultimate", damageMod: 2.0, emoji: "🔥", color: "#ff0033" },
+            { name: "슬랩", type: "slap", damageMod: 0.9, emoji: "✋", color: "#ffffff" }
+        ];
+        
+        // ====================== 사진 로드 ======================
+        function loadPlayerPhoto(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                document.getElementById('player-img').src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        function loadOpponentPhoto(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(ev) {
+                document.getElementById('opponent-img').src = ev.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        // ====================== 능력치 랜덤 부여 ======================
+        function randomizeStats() {
+            player.hp = player.maxHp = Math.floor(Math.random() * 40) + 110;
+            player.mp = player.maxMp = Math.floor(Math.random() * 30) + 70;
+            player.atk = Math.floor(Math.random() * 25) + 60;
+            player.def = Math.floor(Math.random() * 20) + 45;
+            
+            opponent.hp = opponent.maxHp = Math.floor(Math.random() * 50) + 120;
+            opponent.mp = opponent.maxMp = Math.floor(Math.random() * 40) + 80;
+            opponent.atk = Math.floor(Math.random() * 30) + 70;
+            opponent.def = Math.floor(Math.random() * 25) + 40;
+            
+            document.getElementById('player-stats').textContent = 
+                `HP ${player.hp} / MP ${player.mp} / ATK ${player.atk} / DEF ${player.def}`;
+            document.getElementById('opponent-stats').textContent = 
+                `HP ${opponent.hp} / MP ${opponent.mp} / ATK ${opponent.atk} / DEF ${opponent.def}`;
+        }
+        
+        // ====================== 애니메이션 효과 생성 ======================
+        function createAttackEffect(attackerSide, attack) {
+            const layer = document.getElementById('effect-layer');
+            const isPlayer = attackerSide === 'left';
+            
+            if (attack.type === 'beam') {
+                // 에너지파 빔
+                const beam = document.createElement('div');
+                beam.className = 'beam';
+                beam.style.top = '180px';
+                beam.style.left = isPlayer ? '280px' : '420px';
+                beam.style.width = isPlayer ? '380px' : '380px';
+                beam.style.transform = isPlayer ? 'rotate(0deg)' : 'rotate(180deg)';
+                layer.appendChild(beam);
+                
+                setTimeout(() => beam.remove(), 1200);
+                
+                // 상대 흔들기
+                const target = isPlayer ? document.getElementById('opponent-container') : document.getElementById('player-container');
+                target.classList.add('shake');
+                setTimeout(() => target.classList.remove('shake'), 600);
+            } 
+            else {
+                // 일반 공격 이펙트 (이모지 + 폭발)
+                const effect = document.createElement('div');
+                effect.className = 'attack-effect text-7xl';
+                effect.style.left = isPlayer ? '340px' : '460px';
+                effect.style.top = '160px';
+                effect.textContent = attack.emoji;
+                effect.style.color = attack.color;
+                layer.appendChild(effect);
+                
+                // 데미지 숫자
+                const damageEl = document.createElement('div');
+                damageEl.className = 'damage';
+                damageEl.style.left = isPlayer ? '520px' : '280px';
+                damageEl.style.top = '140px';
+                damageEl.textContent = Math.floor(Math.random() * 25) + 18;
+                layer.appendChild(damageEl);
+                
+                setTimeout(() => {
+                    effect.remove();
+                    damageEl.remove();
+                }, 1400);
+            }
+            
+            // 로그에 공격 표시
+            const log = document.getElementById('battle-log');
+            log.innerHTML = `<span class="text-[#00f0ff]">${isPlayer ? player.name : opponent.name}</span> → <span class="text-[#ff0033]">${attack.name}!</span>`;
+            setTimeout(() => { if (log.innerHTML.includes(attack.name)) log.innerHTML = ''; }, 2200);
+        }
+        
+        // ====================== 전투 시뮬레이션 (실시간 애니메이션) ======================
+        async function startBattle() {
+            // 능력치 초기화
+            randomizeStats();
+            
+            // HP/MP 바 초기화
+            document.getElementById('player-hp').style.width = '100%';
+            document.getElementById('player-mp').style.width = '100%';
+            document.getElementById('opponent-hp').style.width = '100%';
+            document.getElementById('opponent-mp').style.width = '100%';
+            
+            let pHp = player.hp;
+            let oHp = opponent.hp;
+            
+            document.getElementById('battle-log').innerHTML = '⚔️ 전투 시작!';
+            
+            // 6~9턴 정도의 전투
+            const turns = Math.floor(Math.random() * 4) + 6;
+            
+            for (let i = 0; i < turns; i++) {
+                if (pHp <= 0 || oHp <= 0) break;
+                
+                // 누가 먼저 공격할지 (50% 확률 + 운)
+                const playerTurn = Math.random() > 0.5;
+                
+                const attacker = playerTurn ? player : opponent;
+                const defender = playerTurn ? opponent : player;
+                const attack = attacks[Math.floor(Math.random() * attacks.length)];
+                
+                // 공격력 계산
+                let damage = Math.floor(attacker.atk * attack.damageMod * (0.8 + Math.random() * 0.6));
+                damage = Math.max(8, Math.floor(damage - defender.def * 0.4));
+                
+                // HP 감소
+                if (playerTurn) {
+                    oHp = Math.max(0, oHp - damage);
+                    document.getElementById('opponent-hp').style.width = `${(oHp / opponent.maxHp) * 100}%`;
+                    createAttackEffect('left', attack);
+                } else {
+                    pHp = Math.max(0, pHp - damage);
+                    document.getElementById('player-hp').style.width = `${(pHp / player.maxHp) * 100}%`;
+                    createAttackEffect('right', attack);
+                }
+                
+                // MP 약간 소모
+                if (playerTurn) {
+                    player.mp = Math.max(0, player.mp - 8);
+                    document.getElementById('player-mp').style.width = `${(player.mp / player.maxMp) * 100}%`;
+                } else {
+                    opponent.mp = Math.max(0, opponent.mp - 8);
+                    document.getElementById('opponent-mp').style.width = `${(opponent.mp / opponent.maxMp) * 100}%`;
+                }
+                
+                // 애니메이션 딜레이 (실시간 느낌)
+                await new Promise(resolve => setTimeout(resolve, 1100));
+            }
+            
+            // 승자 판정
+            const playerWin = pHp > oHp;
+            
+            document.getElementById('battle-log').innerHTML = playerWin 
+                ? `<span class="text-[#00f0ff] text-3xl">🎉 YOU WIN!!</span>` 
+                : `<span class="text-[#ff0033] text-3xl">💥 YOU LOSE...</span>`;
+            
+            // 승리 폭죽 효과
+            if (playerWin) {
+                for (let i = 0; i < 12; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.textContent = ['🔥','⭐','💥','⚡'][Math.floor(Math.random()*4)];
+                        confetti.style.position = 'absolute';
+                        confetti.style.left = Math.random() * 100 + '%';
+                        confetti.style.top = '-50px';
+                        confetti.style.fontSize = '30px';
+                        confetti.style.zIndex = 999;
+                        document.getElementById('arena').appendChild(confetti);
+                        
+                        let y = -50;
+                        const fall = setInterval(() => {
+                            y += 12 + Math.random() * 8;
+                            confetti.style.top = y + 'px';
+                            if (y > 500) {
+                                clearInterval(fall);
+                                confetti.remove();
+                            }
+                        }, 30);
+                    }, i * 40);
+                }
+            }
+            
+            // 끝난 후 다시 시작 가능
+            console.log('%c✅ 전투 애니메이션 완전 구현됨!', 'color:#00f0ff; font-size:18px');
+        }
+        
+        function resetBattle() {
+            location.reload();
+        }
+        
+        // ====================== 초기화 ======================
+        window.onload = function() {
+            randomizeStats();
+            console.log('%c📸 포토 파이터 전투 애니메이션 세부 구현 완료!', 'background:#00f0ff;color:#0a0a2e;padding:2px 8px;border-radius:4px;font-size:16px');
+            console.log('→ 사진 업로드 후 "전투 시작" 버튼 누르면 실시간 애니메이션 전투 시작');
+            console.log('→ 주먹, 발차기, 에너지파, 권총 등 8종류의 개별 애니메이션 적용됨');
+        };
+    </script>
+</body>
+</html>
