@@ -12,10 +12,8 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
 body{
-  display:flex;flex-direction:column;
-  height:100dvh;overflow:hidden;
-  background:#0a1628;
-  font-family:'Noto Sans KR',sans-serif;
+  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
+  background:#0a1628;font-family:'Noto Sans KR',sans-serif;
   color:#fff;user-select:none;-webkit-user-select:none;
 }
 
@@ -23,23 +21,39 @@ body{
 #game-header{
   display:none;flex-shrink:0;height:52px;
   align-items:center;justify-content:space-between;
-  padding:0 14px;
+  padding:0 12px;
   background:rgba(10,22,40,0.97);
   border-bottom:1px solid rgba(255,255,255,0.1);
-  z-index:10;
+  z-index:10;gap:8px;
 }
-.hdr-title{font-size:13px;font-weight:700;color:#93c5fd}
-.score-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hdr-title{font-size:13px;font-weight:700;color:#93c5fd;white-space:nowrap}
+.hdr-center{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
 #score-disp{font-size:12px;font-weight:700;color:#fbbf24}
-#prog-bar{width:90px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden}
+#prog-bar{width:100%;max-width:120px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden}
 #prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#4ade80,#22c55e);transition:width .4s ease;border-radius:2px}
-#lives-disp{font-size:18px;letter-spacing:2px}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;white-space:nowrap}
+#lives-disp{font-size:12px;font-weight:700;color:#f87171}
+#wrong-disp{font-size:12px;font-weight:700;color:#fb923c}
 
 /* ── Map ───────────────────────────────── */
-#map-wrap{flex:1;position:relative;overflow:hidden}
+#map-wrap{flex:1;position:relative;overflow:hidden;cursor:grab}
+#map-wrap:active{cursor:grabbing}
 #world-svg{width:100%;height:100%;display:block;touch-action:none}
 .cpath{cursor:pointer}
-.cpath:hover{opacity:.8}
+
+/* ── Zoom Controls ───────────────────────── */
+#zoom-ctrl{
+  display:none;position:absolute;right:10px;bottom:160px;
+  flex-direction:column;gap:6px;z-index:18;
+}
+.zbtn{
+  width:38px;height:38px;
+  background:rgba(10,22,40,0.88);border:1px solid rgba(255,255,255,0.18);
+  border-radius:9px;color:#fff;font-size:17px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:background .15s;
+}
+.zbtn:active{background:rgba(59,130,246,0.5)}
 
 /* ── Question Card ──────────────────────── */
 #qcard{
@@ -76,19 +90,16 @@ body{
 }
 .overlay.hide{opacity:0;pointer-events:none}
 
-/* Loading */
 #scr-load{background:#0a1628;z-index:100;gap:18px}
 .spin{width:44px;height:44px;border:4px solid rgba(255,255,255,.12);border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
 .load-txt{font-size:15px;color:rgba(255,255,255,.45)}
 
-/* Start */
 #scr-start{background:radial-gradient(ellipse at 50% 40%,#1a3a5c,#0a1628 70%);gap:14px;padding:28px 24px;text-align:center}
 .globe-ico{font-size:68px;animation:float 3s ease-in-out infinite;line-height:1}
 .s-title{font-size:30px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .s-sub{font-size:14px;color:rgba(255,255,255,.5);line-height:1.7;max-width:260px}
 .rules{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 16px;font-size:13px;color:rgba(255,255,255,.65);line-height:1.9;text-align:left;max-width:290px;width:100%}
 
-/* End */
 #scr-end{
   background:rgba(8,16,30,.98);z-index:92;
   flex-direction:column;overflow:hidden;
@@ -99,7 +110,8 @@ body{
 .end-hdr{flex-shrink:0;padding:22px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
 #end-rank{font-size:26px;font-weight:900;margin-bottom:3px}
 #end-stars{font-size:20px;letter-spacing:4px;margin-bottom:6px}
-#end-score{font-size:19px;font-weight:700;color:#fbbf24;margin-bottom:6px}
+#end-score{font-size:19px;font-weight:700;color:#fbbf24;margin-bottom:4px}
+#end-wrong{font-size:13px;color:#fb923c;margin-bottom:6px}
 #end-enc{font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;max-width:310px;margin:0 auto}
 .list-hdr{flex-shrink:0;padding:10px 16px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase}
 #end-list{flex:1;overflow-y:auto;padding:0 10px 8px;-webkit-overflow-scrolling:touch}
@@ -113,18 +125,14 @@ body{
 .cr-cap{flex-shrink:0;color:rgba(255,255,255,.8);font-size:12px;text-align:right;min-width:70px}
 .end-foot{flex-shrink:0;padding:10px 20px 18px;text-align:center;border-top:1px solid rgba(255,255,255,.07)}
 
-/* Button */
 .btn{
-  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
-  color:#fff;border:none;border-radius:50px;
-  padding:13px 38px;font-size:17px;font-weight:700;
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:none;
+  border-radius:50px;padding:13px 38px;font-size:17px;font-weight:700;
   font-family:'Noto Sans KR',sans-serif;cursor:pointer;
-  box-shadow:0 4px 22px rgba(59,130,246,.4);
-  transition:transform .15s,box-shadow .15s;
+  box-shadow:0 4px 22px rgba(59,130,246,.4);transition:transform .15s,box-shadow .15s;
 }
 .btn:active{transform:scale(.96);box-shadow:0 2px 10px rgba(59,130,246,.3)}
 
-/* Keyframes */
 @keyframes spin  {to{transform:rotate(360deg)}}
 @keyframes float {0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
 @keyframes popIn {0%{transform:scale(.65);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
@@ -145,9 +153,9 @@ body{
   <p class="s-sub">수도 이름을 보고<br>지도에서 나라를 찾아보세요!</p>
   <div class="rules">
     🎯 수도 이름이 화면에 표시됩니다<br>
-    🗺️ 지도에서 해당 나라를 클릭하세요<br>
-    ❤️ 목숨 3개 — 틀리면 하나씩 줄어요<br>
-    🌟 총 71개 나라의 수도를 완파하세요!
+    🗺️ 지도를 확대해서 나라를 클릭하세요<br>
+    ❤️ 목숨 10개 — 틀리면 하나씩 줄어요<br>
+    🔍 두 손가락 핀치 또는 스크롤로 확대!
   </div>
   <button class="btn" id="btn-start">게임 시작</button>
 </div>
@@ -158,6 +166,7 @@ body{
     <div id="end-rank"></div>
     <div id="end-stars"></div>
     <div id="end-score"></div>
+    <div id="end-wrong"></div>
     <div id="end-enc"></div>
   </div>
   <div class="list-hdr">나라 ↔ 수도 정답표</div>
@@ -170,16 +179,20 @@ body{
 <!-- Game Header -->
 <header id="game-header">
   <span class="hdr-title">🌍 수도 퀴즈</span>
-  <div class="score-col">
+  <div class="hdr-center">
     <span id="score-disp">0 / 71</span>
     <div id="prog-bar"><div id="prog-fill"></div></div>
   </div>
-  <div id="lives-disp">❤️❤️❤️</div>
+  <div class="hdr-right">
+    <span id="lives-disp">❤️ 10</span>
+    <span id="wrong-disp">❌ 0</span>
+  </div>
 </header>
 
 <!-- Map -->
 <div id="map-wrap">
   <svg id="world-svg"></svg>
+  <!-- Legend -->
   <div id="legend">
     <div class="li"><div class="ld" style="background:#4ade80"></div>아메리카</div>
     <div class="li"><div class="ld" style="background:#a78bfa"></div>유럽</div>
@@ -187,20 +200,26 @@ body{
     <div class="li"><div class="ld" style="background:#fbbf24"></div>아프리카</div>
     <div class="li"><div class="ld" style="background:#2dd4bf"></div>오세아니아</div>
   </div>
+  <!-- Zoom controls -->
+  <div id="zoom-ctrl">
+    <button class="zbtn" id="zbtn-in"  title="확대">＋</button>
+    <button class="zbtn" id="zbtn-out" title="축소">－</button>
+    <button class="zbtn" id="zbtn-rst" title="초기화">⌂</button>
+  </div>
 </div>
 
 <!-- Question Card -->
 <div id="qcard">
   <p class="q-label">이 수도가 있는 나라는?</p>
   <h2 id="cap-name">—</h2>
-  <p class="q-hint">지도에서 나라를 클릭하세요</p>
+  <p class="q-hint">지도를 확대 후 나라를 클릭하세요 🔍</p>
   <div id="fb-msg"></div>
 </div>
 
 <script>
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 // DATA
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 const OCEAN  = '#1a3a5c';
 const UNSEEN = '#4a5568';
 const CONT_COLOR = {
@@ -287,12 +306,14 @@ const COUNTRIES = [
   {id:'598',name:'파푸아뉴기니',   capital:'포트모르즈비',     cont:'oceania'},
 ];
 
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 // MAP MODULE
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 const MAP = (() => {
-  let svg, proj, path, cpaths;
+  let svg, proj, path, cpaths, mapRoot, clipEl, sphereRing;
   let W, H, clickCb = null;
+  let zoomBhv;
+  let pStart = null; // tap detection
 
   function margins() {
     return [[20, 14], [W - 20, H - 145]];
@@ -306,20 +327,55 @@ const MAP = (() => {
     proj = d3.geoNaturalEarth1().fitExtent(margins(), {type:'Sphere'});
     path = d3.geoPath().projection(proj);
 
+    // ── Zoom behavior ──
+    zoomBhv = d3.zoom()
+      .scaleExtent([1, 14])
+      .on('zoom', (event) => {
+        mapRoot.attr('transform', event.transform);
+      });
+    svg.call(zoomBhv);
+    svg.on('dblclick.zoom', null); // disable double-click zoom
+
+    // ── Tap detection (works reliably alongside D3 zoom) ──
+    svg.on('pointerdown.tap', (event) => {
+      pStart = {x: event.clientX, y: event.clientY, t: Date.now()};
+    });
+    svg.on('pointerup.tap', (event) => {
+      if (!pStart) return;
+      const dx = event.clientX - pStart.x;
+      const dy = event.clientY - pStart.y;
+      const dt = Date.now() - pStart.t;
+      pStart = null;
+      // Treat as tap if barely moved and quick
+      if (Math.sqrt(dx*dx + dy*dy) < 10 && dt < 450) {
+        const el = document.elementFromPoint(event.clientX, event.clientY);
+        if (el && el.classList.contains('cpath')) {
+          const d = d3.select(el).datum();
+          if (d && clickCb) clickCb(String(d.id));
+        }
+      }
+    });
+    svg.on('pointercancel.tap', () => { pStart = null; });
+
     const topo = await d3.json(
       'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
     );
 
+    // ── Build layers ──
     const defs = svg.append('defs');
-    defs.append('clipPath').attr('id','sclip')
+    clipEl = defs.append('clipPath').attr('id','sclip')
       .append('path').datum({type:'Sphere'}).attr('d', path);
 
-    const g = svg.append('g').attr('clip-path','url(#sclip)');
+    // Outer group: clip is fixed (not zoomed)
+    const outerG = svg.append('g').attr('clip-path','url(#sclip)');
 
-    g.append('path').datum({type:'Sphere'})
+    // Inner group: gets zoom transform
+    mapRoot = outerG.append('g');
+
+    mapRoot.append('path').datum({type:'Sphere'})
       .attr('d', path).style('fill', OCEAN).attr('pointer-events','none');
 
-    g.append('path').datum(d3.geoGraticule()())
+    mapRoot.append('path').datum(d3.geoGraticule()())
       .attr('d', path).attr('fill','none')
       .attr('stroke','rgba(255,255,255,.04)').attr('stroke-width','.5')
       .attr('pointer-events','none');
@@ -327,27 +383,24 @@ const MAP = (() => {
     const feats = topojson.feature(topo, topo.objects.countries).features
       .filter(d => d.id !== 10);
 
-    cpaths = g.selectAll('.cpath').data(feats).enter()
+    cpaths = mapRoot.selectAll('.cpath').data(feats).enter()
       .append('path').attr('class','cpath')
       .attr('d', path).style('fill', UNSEEN)
-      .attr('stroke','rgba(255,255,255,.22)').attr('stroke-width','.5')
-      .on('click', (e, d) => { if(clickCb) clickCb(String(d.id)); })
-      .on('touchstart', function(e, d) {
-        e.preventDefault();
-        if(clickCb) clickCb(String(d.id));
-      }, {passive:false});
+      .attr('stroke','rgba(255,255,255,.22)').attr('stroke-width','.5');
 
-    g.append('path')
+    mapRoot.append('path')
       .datum(topojson.mesh(topo, topo.objects.countries, (a,b) => a!==b))
       .attr('d', path).attr('fill','none')
       .attr('stroke','rgba(255,255,255,.1)').attr('stroke-width','.3')
       .attr('pointer-events','none');
 
-    svg.append('path').datum({type:'Sphere'})
+    // Sphere ring: outside zoom group, always on top
+    sphereRing = svg.append('path').datum({type:'Sphere'})
       .attr('d', path).attr('fill','none')
       .attr('stroke','rgba(100,180,255,.35)').attr('stroke-width','1.2')
       .attr('pointer-events','none');
 
+    // Resize observer
     let t;
     new ResizeObserver(() => { clearTimeout(t); t = setTimeout(resize, 160); })
       .observe(wrap);
@@ -358,38 +411,48 @@ const MAP = (() => {
     W = wrap.clientWidth; H = wrap.clientHeight;
     svg.attr('viewBox', `0 0 ${W} ${H}`);
     proj.fitExtent(margins(), {type:'Sphere'});
-    svg.selectAll('path').attr('d', path);
+    // Update all paths (in mapRoot)
+    mapRoot.selectAll('path').attr('d', path);
+    // Update clip and sphere ring (outside mapRoot)
+    clipEl.attr('d', path);
+    sphereRing.attr('d', path);
+    // Reset zoom on resize
+    svg.call(zoomBhv.transform, d3.zoomIdentity);
   }
 
   function flashOk(id, finalColor) {
     const p = cpaths && cpaths.filter(d => String(d.id) === id);
-    if(!p || p.empty()) return;
+    if (!p || p.empty()) return;
     p.style('fill','#86efac');
     setTimeout(() => p.transition().duration(550).style('fill', finalColor), 120);
   }
 
   function flashNg(id) {
     const p = cpaths && cpaths.filter(d => String(d.id) === id);
-    if(!p || p.empty()) return;
+    if (!p || p.empty()) return;
     p.style('fill','#ef4444');
     setTimeout(() => p.transition().duration(480).style('fill', UNSEEN), 340);
   }
 
   function reset() {
     cpaths && cpaths.interrupt().style('fill', UNSEEN);
+    svg && zoomBhv && svg.call(zoomBhv.transform, d3.zoomIdentity);
   }
+
+  function zoomIn()  { svg.transition().duration(280).call(zoomBhv.scaleBy, 2); }
+  function zoomOut() { svg.transition().duration(280).call(zoomBhv.scaleBy, 0.5); }
+  function zoomReset(){ svg.transition().duration(400).call(zoomBhv.transform, d3.zoomIdentity); }
 
   function onClick(fn) { clickCb = fn; }
 
-  return {init, flashOk, flashNg, reset, onClick};
+  return {init, flashOk, flashNg, reset, onClick, zoomIn, zoomOut, zoomReset};
 })();
 
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 // UI MODULE
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 const UI = (() => {
   const $ = id => document.getElementById(id);
-
   const show = id => $(id).classList.remove('hide');
   const hide = id => $(id).classList.add('hide');
 
@@ -397,29 +460,28 @@ const UI = (() => {
     $('game-header').style.display = 'flex';
     $('qcard').style.display = 'block';
     $('legend').style.display = 'flex';
+    $('zoom-ctrl').style.display = 'flex';
   }
 
   function setCapital(txt) {
     const el = $('cap-name');
     el.classList.remove('pop'); void el.offsetWidth;
-    el.textContent = txt;
-    el.classList.add('pop');
+    el.textContent = txt; el.classList.add('pop');
   }
 
   function feedback(txt, type) {
     const el = $('fb-msg');
     el.classList.remove('pop','ok','ng'); void el.offsetWidth;
-    el.textContent = txt;
-    el.className = 'pop ' + type;
+    el.textContent = txt; el.className = 'pop ' + type;
   }
 
   function clearFb() { $('fb-msg').textContent=''; $('fb-msg').className=''; }
 
   function score(s, t) { $('score-disp').textContent = `${s} / ${t}`; }
 
-  function lives(n) {
-    $('lives-disp').textContent = '❤️'.repeat(Math.max(0,n)) + '🖤'.repeat(Math.max(0,3-n));
-  }
+  function lives(n) { $('lives-disp').textContent = `❤️ ${Math.max(0,n)}`; }
+
+  function wrongs(n) { $('wrong-disp').textContent = `❌ ${n}`; }
 
   function progress(i, t) {
     $('prog-fill').style.width = (t ? Math.round(i/t*100) : 0) + '%';
@@ -435,16 +497,16 @@ const UI = (() => {
     return             {title:'지리 신입 📚',  stars:0, enc:'처음부터 다시 도전해봐요! 당신도 분명 잘 할 수 있어요! 화이팅! 🔥'};
   }
 
-  function endScreen(s, t, answered, questions) {
+  function endScreen(s, t, wrongCnt, answered, questions) {
     const r = getRank(s, t);
     $('end-rank').textContent  = r.title;
     $('end-stars').textContent = '⭐'.repeat(r.stars) + '☆'.repeat(5-r.stars);
-    $('end-score').textContent = `${s} / ${t} 정답`;
+    $('end-score').textContent = `✅ 정답 ${s} / ${t}`;
+    $('end-wrong').textContent = `❌ 오답 ${wrongCnt}회`;
     $('end-enc').textContent   = r.enc;
 
     const list = $('end-list');
     list.innerHTML = '';
-    // correct first, then missed
     [...questions.filter(q => answered.has(q.id)),
      ...questions.filter(q => !answered.has(q.id))].forEach(q => {
       const ok = answered.has(q.id);
@@ -457,37 +519,36 @@ const UI = (() => {
         `<span class="cr-cap">${q.capital}</span>`;
       list.appendChild(div);
     });
-
     show('scr-end');
   }
 
-  return {show, hide, showGame, setCapital, feedback, clearFb, score, lives, progress, endScreen};
+  return {show, hide, showGame, setCapital, feedback, clearFb, score, lives, wrongs, progress, endScreen};
 })();
 
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 // GAME MODULE
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 const GAME = (() => {
-  let qs=[], idx=0, sc=0, lv=3, answered=new Set(), locked=false, playing=false;
+  const MAX_LIVES = 10;
+  let qs=[], idx=0, sc=0, lv=MAX_LIVES, wrongCnt=0;
+  let answered=new Set(), locked=false, playing=false;
 
   function shuffle(a) {
-    const b = [...a];
-    for(let i=b.length-1; i>0; i--) {
-      const j = 0|Math.random()*(i+1);
-      [b[i],b[j]] = [b[j],b[i]];
-    }
+    const b=[...a];
+    for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}
     return b;
   }
 
   function start() {
-    qs=shuffle(COUNTRIES); idx=0; sc=0; lv=3;
+    qs=shuffle(COUNTRIES); idx=0; sc=0; lv=MAX_LIVES; wrongCnt=0;
     answered=new Set(); locked=false; playing=true;
 
     MAP.reset();
     UI.hide('scr-start'); UI.hide('scr-end');
     UI.showGame();
     UI.score(0, qs.length);
-    UI.lives(3);
+    UI.lives(MAX_LIVES);
+    UI.wrongs(0);
     UI.progress(0, qs.length);
     ask(qs[0]);
   }
@@ -499,7 +560,7 @@ const GAME = (() => {
   }
 
   function click(fid) {
-    if(locked || !playing) return;
+    if (locked || !playing) return;
     locked = true;
     const q = qs[idx];
     fid === q.id ? correct(q) : wrong(fid);
@@ -515,10 +576,11 @@ const GAME = (() => {
   }
 
   function wrong(fid) {
-    lv--;
+    lv--; wrongCnt++;
     MAP.flashNg(fid);
     UI.feedback('❌ 틀렸어요! 다시 찾아보세요', 'ng');
     UI.lives(lv);
+    UI.wrongs(wrongCnt);
     setTimeout(() => { lv<=0 ? end() : (locked=false); }, 950);
   }
 
@@ -529,15 +591,15 @@ const GAME = (() => {
 
   function end() {
     playing = false;
-    UI.endScreen(sc, qs.length, answered, qs);
+    UI.endScreen(sc, qs.length, wrongCnt, answered, qs);
   }
 
   return {start, click};
 })();
 
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 // BOOT
-// ══════════════════════════════════════
+// ════════════════════════════════════════
 (async () => {
   try {
     await MAP.init(document.getElementById('map-wrap'));
@@ -555,10 +617,10 @@ const GAME = (() => {
   }
 
   document.getElementById('btn-start').addEventListener('click', () => GAME.start());
-  document.getElementById('btn-retry').addEventListener('click', () => {
-    UI.hide('scr-end');
-    GAME.start();
-  });
+  document.getElementById('btn-retry').addEventListener('click', () => { UI.hide('scr-end'); GAME.start(); });
+  document.getElementById('zbtn-in') .addEventListener('click', () => MAP.zoomIn());
+  document.getElementById('zbtn-out').addEventListener('click', () => MAP.zoomOut());
+  document.getElementById('zbtn-rst').addEventListener('click', () => MAP.zoomReset());
 })();
 </script>
 </body>
