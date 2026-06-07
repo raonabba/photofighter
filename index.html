@@ -1,245 +1,565 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>THE KING OF IT 2026</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Jua&display=swap');
-        :root { --p1: #0ea5e9; --p2: #f43f5e; --panel: #1e293b; }
-        body { 
-            font-family: 'Jua', sans-serif; background: #020617; color: white; 
-            margin: 0; padding: 0; overflow: hidden; height: 100dvh;
-            display: flex; flex-direction: column; align-items: center;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>세계 수도 퀴즈 🌍</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 
-        /* 메인 프레임: 화면 전체 비율 유지 */
-        .game-wrapper {
-            width: 95%; max-width: 1000px; height: 100%;
-            display: flex; flex-direction: column;
-            padding: 20px 0; box-sizing: border-box;
-        }
+body{
+  display:flex;flex-direction:column;
+  height:100dvh;overflow:hidden;
+  background:#0a1628;
+  font-family:'Noto Sans KR',sans-serif;
+  color:#fff;user-select:none;-webkit-user-select:none;
+}
 
-        /* 아레나 박스 (16:9 비율 유지하며 절대 안 잘림) */
-        .arena-outer {
-            position: relative; width: 100%; aspect-ratio: 16 / 9;
-            background: #334155; border: 8px solid #475569; border-radius: 15px;
-            overflow: hidden; box-shadow: 0 0 50px rgba(0,0,0,0.7);
-        }
-        
-        canvas { width: 100%; height: 100%; display: block; }
+/* ── Header ─────────────────────────────── */
+#game-header{
+  display:none;flex-shrink:0;height:52px;
+  align-items:center;justify-content:space-between;
+  padding:0 14px;
+  background:rgba(10,22,40,0.97);
+  border-bottom:1px solid rgba(255,255,255,0.1);
+  z-index:10;
+}
+.hdr-title{font-size:13px;font-weight:700;color:#93c5fd}
+.score-col{display:flex;flex-direction:column;align-items:center;gap:3px}
+#score-disp{font-size:12px;font-weight:700;color:#fbbf24}
+#prog-bar{width:90px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden}
+#prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#4ade80,#22c55e);transition:width .4s ease;border-radius:2px}
+#lives-disp{font-size:18px;letter-spacing:2px}
 
-        /* 체력바 레이아웃 */
-        .ui-overlay {
-            position: absolute; top: 15px; width: 100%;
-            display: flex; justify-content: center; align-items: center;
-            gap: 10px; padding: 0 5%; pointer-events: none;
-        }
-        .hp-bar { flex: 1; height: 25px; background: #450a0a; border: 2px solid #fff; transform: skew(-15deg); overflow: hidden; }
-        .hp-fill { height: 100%; background: linear-gradient(90deg, #fbbf24, #ef4444); transition: width 0.3s; }
-        .fight-btn-top {
-            background: linear-gradient(180deg, #fbbf24, #d97706);
-            padding: 5px 20px; border-radius: 8px; border: 2px solid #fff;
-            font-family: 'Black Han Sans'; font-size: 1.5rem; color: #450a0a;
-            cursor: pointer; pointer-events: auto;
-        }
+/* ── Map ───────────────────────────────── */
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#world-svg{width:100%;height:100%;display:block;touch-action:none}
+.cpath{cursor:pointer}
+.cpath:hover{opacity:.8}
 
-        /* 하단 컨트롤 패널 */
-        .control-panel {
-            margin-top: 15px; background: var(--panel); border: 3px solid #475569;
-            border-radius: 12px; padding: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
-        }
-        .p-info { display: flex; flex-direction: column; gap: 8px; }
-        .neon-btn {
-            width: 100%; padding: 10px; border-radius: 8px; font-weight: bold;
-            border: 2px solid transparent; transition: 0.2s; cursor: pointer; font-size: 0.9rem;
-        }
-        .btn-p1 { border-color: var(--p1); color: var(--p1); box-shadow: inset 0 0 8px var(--p1); }
-        .btn-p2 { border-color: var(--p2); color: var(--p2); box-shadow: inset 0 0 8px var(--p2); }
+/* ── Question Card ──────────────────────── */
+#qcard{
+  display:none;
+  position:absolute;bottom:0;left:0;right:0;
+  background:linear-gradient(to top,rgba(8,18,34,.98) 72%,transparent);
+  padding:14px 20px max(22px,env(safe-area-inset-bottom));
+  text-align:center;z-index:20;pointer-events:none;
+}
+.q-label{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
+#cap-name{font-size:30px;font-weight:900;line-height:1.1;margin-bottom:4px}
+#cap-name.pop{animation:popIn .28s ease-out both}
+.q-hint{font-size:11px;color:rgba(255,255,255,.35);margin-bottom:6px}
+#fb-msg{font-size:13px;font-weight:700;min-height:20px}
+#fb-msg.ok{color:#4ade80}
+#fb-msg.ng{color:#f87171}
+#fb-msg.pop{animation:popIn .28s ease-out both}
 
-        /* 스태츠 뱃지 */
-        .stat-badge { background: rgba(0,0,0,0.4); border: 1px solid #fbbf24; color: #fbbf24; padding: 1px 6px; border-radius: 4px; font-size: 0.7rem; }
+/* ── Legend ─────────────────────────────── */
+#legend{
+  display:none;position:absolute;top:8px;left:8px;
+  flex-direction:column;gap:3px;
+  background:rgba(8,18,34,.82);border-radius:8px;padding:7px 10px;
+  z-index:15;pointer-events:none;
+}
+.li{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,.65)}
+.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
-        /* 크롭 모달 */
-        #cropModal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; }
-        #cropCanvas { border: 2px solid #fbbf24; border-radius: 50%; touch-action: none; background: #222; }
-    </style>
+/* ── Overlay screens ────────────────────── */
+.overlay{
+  position:fixed;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  z-index:90;transition:opacity .35s ease;
+}
+.overlay.hide{opacity:0;pointer-events:none}
+
+/* Loading */
+#scr-load{background:#0a1628;z-index:100;gap:18px}
+.spin{width:44px;height:44px;border:4px solid rgba(255,255,255,.12);border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
+.load-txt{font-size:15px;color:rgba(255,255,255,.45)}
+
+/* Start */
+#scr-start{background:radial-gradient(ellipse at 50% 40%,#1a3a5c,#0a1628 70%);gap:14px;padding:28px 24px;text-align:center}
+.globe-ico{font-size:68px;animation:float 3s ease-in-out infinite;line-height:1}
+.s-title{font-size:30px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.s-sub{font-size:14px;color:rgba(255,255,255,.5);line-height:1.7;max-width:260px}
+.rules{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 16px;font-size:13px;color:rgba(255,255,255,.65);line-height:1.9;text-align:left;max-width:290px;width:100%}
+
+/* End */
+#scr-end{
+  background:rgba(8,16,30,.98);z-index:92;
+  flex-direction:column;overflow:hidden;
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+  justify-content:flex-start;
+}
+.end-hdr{flex-shrink:0;padding:22px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
+#end-rank{font-size:26px;font-weight:900;margin-bottom:3px}
+#end-stars{font-size:20px;letter-spacing:4px;margin-bottom:6px}
+#end-score{font-size:19px;font-weight:700;color:#fbbf24;margin-bottom:6px}
+#end-enc{font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;max-width:310px;margin:0 auto}
+.list-hdr{flex-shrink:0;padding:10px 16px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase}
+#end-list{flex:1;overflow-y:auto;padding:0 10px 8px;-webkit-overflow-scrolling:touch}
+.cr{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;margin-bottom:3px;font-size:13px}
+.cr.ok{background:rgba(74,222,128,.07)}
+.cr.ng{background:rgba(248,113,113,.07)}
+.cr-name{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cr.ok .cr-name{color:#86efac}
+.cr.ng .cr-name{color:#fca5a5}
+.cr-arr{color:rgba(255,255,255,.25);flex-shrink:0}
+.cr-cap{flex-shrink:0;color:rgba(255,255,255,.8);font-size:12px;text-align:right;min-width:70px}
+.end-foot{flex-shrink:0;padding:10px 20px 18px;text-align:center;border-top:1px solid rgba(255,255,255,.07)}
+
+/* Button */
+.btn{
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+  color:#fff;border:none;border-radius:50px;
+  padding:13px 38px;font-size:17px;font-weight:700;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+  box-shadow:0 4px 22px rgba(59,130,246,.4);
+  transition:transform .15s,box-shadow .15s;
+}
+.btn:active{transform:scale(.96);box-shadow:0 2px 10px rgba(59,130,246,.3)}
+
+/* Keyframes */
+@keyframes spin  {to{transform:rotate(360deg)}}
+@keyframes float {0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
+@keyframes popIn {0%{transform:scale(.65);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+</style>
 </head>
 <body>
 
-    <div id="cropModal">
-        <canvas id="cropCanvas" width="300" height="300"></canvas>
-        <input type="range" id="zoomRange" min="0.1" max="3" step="0.05" value="1" class="w-64 my-6">
-        <button onclick="saveCrop()" class="bg-yellow-500 text-black px-10 py-3 rounded-xl font-bold">얼굴 저장</button>
-    </div>
+<!-- Loading -->
+<div class="overlay" id="scr-load">
+  <div class="spin"></div>
+  <p class="load-txt">세계지도 불러오는 중…</p>
+</div>
 
-    <div class="game-wrapper">
-        <div class="text-center mb-2">
-            <h1 class="text-2xl md:text-3xl font-black text-yellow-400 italic">THE KING OF IT '26</h1>
-        </div>
+<!-- Start -->
+<div class="overlay hide" id="scr-start">
+  <div class="globe-ico">🌍</div>
+  <h1 class="s-title">세계 수도 퀴즈</h1>
+  <p class="s-sub">수도 이름을 보고<br>지도에서 나라를 찾아보세요!</p>
+  <div class="rules">
+    🎯 수도 이름이 화면에 표시됩니다<br>
+    🗺️ 지도에서 해당 나라를 클릭하세요<br>
+    ❤️ 목숨 3개 — 틀리면 하나씩 줄어요<br>
+    🌟 총 71개 나라의 수도를 완파하세요!
+  </div>
+  <button class="btn" id="btn-start">게임 시작</button>
+</div>
 
-        <div class="arena-outer">
-            <div class="ui-overlay">
-                <div class="hp-bar"><div id="hp1" class="hp-fill" style="width:100%"></div></div>
-                <div class="fight-btn-top" onclick="startBattle()">FIGHT!</div>
-                <div class="hp-bar"><div id="hp2" class="hp-fill" style="width:100%"></div></div>
-            </div>
-            <canvas id="gameCanvas"></canvas>
-        </div>
+<!-- End -->
+<div class="overlay hide" id="scr-end">
+  <div class="end-hdr">
+    <div id="end-rank"></div>
+    <div id="end-stars"></div>
+    <div id="end-score"></div>
+    <div id="end-enc"></div>
+  </div>
+  <div class="list-hdr">나라 ↔ 수도 정답표</div>
+  <div id="end-list"></div>
+  <div class="end-foot">
+    <button class="btn" id="btn-retry">다시 도전 🚀</button>
+  </div>
+</div>
 
-        <div class="control-panel">
-            <div class="p-info">
-                <div class="flex justify-between items-center">
-                    <span id="name1" class="text-sky-400 font-bold">Player 1</span>
-                    <div id="s1" class="flex gap-1"></div>
-                </div>
-                <button onclick="openUpload('p1')" class="neon-btn btn-p1">UPLOAD FACE</button>
-            </div>
-            <div class="p-info">
-                <div class="flex justify-between items-center flex-row-reverse">
-                    <span id="name2" class="text-rose-500 font-bold">Player 2</span>
-                    <div id="s2" class="flex gap-1"></div>
-                </div>
-                <button onclick="openUpload('p2')" class="neon-btn btn-p2">UPLOAD FACE</button>
-            </div>
-        </div>
-    </div>
+<!-- Game Header -->
+<header id="game-header">
+  <span class="hdr-title">🌍 수도 퀴즈</span>
+  <div class="score-col">
+    <span id="score-disp">0 / 71</span>
+    <div id="prog-bar"><div id="prog-fill"></div></div>
+  </div>
+  <div id="lives-disp">❤️❤️❤️</div>
+</header>
 
-    <input type="file" id="fileInput" hidden accept="image/*">
+<!-- Map -->
+<div id="map-wrap">
+  <svg id="world-svg"></svg>
+  <div id="legend">
+    <div class="li"><div class="ld" style="background:#4ade80"></div>아메리카</div>
+    <div class="li"><div class="ld" style="background:#a78bfa"></div>유럽</div>
+    <div class="li"><div class="ld" style="background:#fb923c"></div>아시아</div>
+    <div class="li"><div class="ld" style="background:#fbbf24"></div>아프리카</div>
+    <div class="li"><div class="ld" style="background:#2dd4bf"></div>오세아니아</div>
+  </div>
+</div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 1200; canvas.height = 675;
+<!-- Question Card -->
+<div id="qcard">
+  <p class="q-label">이 수도가 있는 나라는?</p>
+  <h2 id="cap-name">—</h2>
+  <p class="q-hint">지도에서 나라를 클릭하세요</p>
+  <div id="fb-msg"></div>
+</div>
 
-        const phrases = ["운영DB 삭제!", "품의서 반려!", "법카 한도초과!", "주말 장애발생!", "슬랙 닉네임 실수!", "배포 1분전 기획변경!", "맥북에 커피!", "퇴근직전 회의!"];
-        const nicks = ["문서반려동물", "법카수호자", "야근요정", "보고서살인마", "코드먹튀꾼", "거버넌스보스", "감사킬러"];
-        const statsPool = ["야근력", "정치력", "정신력", "커피심부름력", "엑셀노가다력"];
+<script>
+// ══════════════════════════════════════
+// DATA
+// ══════════════════════════════════════
+const OCEAN  = '#1a3a5c';
+const UNSEEN = '#4a5568';
+const CONT_COLOR = {
+  americas:'#4ade80', europe:'#a78bfa',
+  asia:'#fb923c', africa:'#fbbf24', oceania:'#2dd4bf'
+};
 
-        let p1 = { x: 300, y: 380, hp: 100, face: null, name: "P1", stats: [] };
-        let p2 = { x: 900, y: 380, hp: 100, face: null, name: "P2", stats: [] };
-        let activeP = null, isFighting = false, shake = 0, msg = { text: "", life: 0 };
+const COUNTRIES = [
+  // Americas
+  {id:'840',name:'미국',           capital:'워싱턴 D.C.',     cont:'americas'},
+  {id:'124',name:'캐나다',         capital:'오타와',           cont:'americas'},
+  {id:'484',name:'멕시코',         capital:'멕시코시티',       cont:'americas'},
+  {id:'076',name:'브라질',         capital:'브라질리아',       cont:'americas'},
+  {id:'032',name:'아르헨티나',     capital:'부에노스아이레스', cont:'americas'},
+  {id:'152',name:'칠레',           capital:'산티아고',         cont:'americas'},
+  {id:'170',name:'콜롬비아',       capital:'보고타',           cont:'americas'},
+  {id:'604',name:'페루',           capital:'리마',             cont:'americas'},
+  {id:'862',name:'베네수엘라',     capital:'카라카스',         cont:'americas'},
+  {id:'858',name:'우루과이',       capital:'몬테비데오',       cont:'americas'},
+  {id:'192',name:'쿠바',           capital:'아바나',           cont:'americas'},
+  {id:'218',name:'에콰도르',       capital:'키토',             cont:'americas'},
+  {id:'600',name:'파라과이',       capital:'아순시온',         cont:'americas'},
+  {id:'068',name:'볼리비아',       capital:'수크레',           cont:'americas'},
+  // Europe
+  {id:'276',name:'독일',           capital:'베를린',           cont:'europe'},
+  {id:'250',name:'프랑스',         capital:'파리',             cont:'europe'},
+  {id:'826',name:'영국',           capital:'런던',             cont:'europe'},
+  {id:'380',name:'이탈리아',       capital:'로마',             cont:'europe'},
+  {id:'724',name:'스페인',         capital:'마드리드',         cont:'europe'},
+  {id:'528',name:'네덜란드',       capital:'암스테르담',       cont:'europe'},
+  {id:'620',name:'포르투갈',       capital:'리스본',           cont:'europe'},
+  {id:'756',name:'스위스',         capital:'베른',             cont:'europe'},
+  {id:'040',name:'오스트리아',     capital:'빈',               cont:'europe'},
+  {id:'752',name:'스웨덴',         capital:'스톡홀름',         cont:'europe'},
+  {id:'578',name:'노르웨이',       capital:'오슬로',           cont:'europe'},
+  {id:'208',name:'덴마크',         capital:'코펜하겐',         cont:'europe'},
+  {id:'246',name:'핀란드',         capital:'헬싱키',           cont:'europe'},
+  {id:'616',name:'폴란드',         capital:'바르샤바',         cont:'europe'},
+  {id:'642',name:'루마니아',       capital:'부쿠레슈티',       cont:'europe'},
+  {id:'300',name:'그리스',         capital:'아테네',           cont:'europe'},
+  {id:'804',name:'우크라이나',     capital:'키이우',           cont:'europe'},
+  {id:'643',name:'러시아',         capital:'모스크바',         cont:'europe'},
+  // Asia
+  {id:'156',name:'중국',           capital:'베이징',           cont:'asia'},
+  {id:'392',name:'일본',           capital:'도쿄',             cont:'asia'},
+  {id:'410',name:'대한민국',       capital:'서울',             cont:'asia'},
+  {id:'356',name:'인도',           capital:'뉴델리',           cont:'asia'},
+  {id:'586',name:'파키스탄',       capital:'이슬라마바드',     cont:'asia'},
+  {id:'764',name:'태국',           capital:'방콕',             cont:'asia'},
+  {id:'704',name:'베트남',         capital:'하노이',           cont:'asia'},
+  {id:'360',name:'인도네시아',     capital:'자카르타',         cont:'asia'},
+  {id:'458',name:'말레이시아',     capital:'쿠알라룸푸르',     cont:'asia'},
+  {id:'608',name:'필리핀',         capital:'마닐라',           cont:'asia'},
+  {id:'104',name:'미얀마',         capital:'네피도',           cont:'asia'},
+  {id:'116',name:'캄보디아',       capital:'프놈펜',           cont:'asia'},
+  {id:'400',name:'요르단',         capital:'암만',             cont:'asia'},
+  {id:'368',name:'이라크',         capital:'바그다드',         cont:'asia'},
+  {id:'364',name:'이란',           capital:'테헤란',           cont:'asia'},
+  {id:'682',name:'사우디아라비아', capital:'리야드',           cont:'asia'},
+  {id:'792',name:'튀르키예',       capital:'앙카라',           cont:'asia'},
+  {id:'784',name:'아랍에미리트',   capital:'아부다비',         cont:'asia'},
+  {id:'496',name:'몽골',           capital:'울란바토르',       cont:'asia'},
+  {id:'398',name:'카자흐스탄',     capital:'아스타나',         cont:'asia'},
+  {id:'004',name:'아프가니스탄',   capital:'카불',             cont:'asia'},
+  {id:'524',name:'네팔',           capital:'카트만두',         cont:'asia'},
+  // Africa
+  {id:'818',name:'이집트',         capital:'카이로',           cont:'africa'},
+  {id:'504',name:'모로코',         capital:'라바트',           cont:'africa'},
+  {id:'012',name:'알제리',         capital:'알제',             cont:'africa'},
+  {id:'706',name:'소말리아',       capital:'모가디슈',         cont:'africa'},
+  {id:'231',name:'에티오피아',     capital:'아디스아바바',     cont:'africa'},
+  {id:'404',name:'케냐',           capital:'나이로비',         cont:'africa'},
+  {id:'834',name:'탄자니아',       capital:'도도마',           cont:'africa'},
+  {id:'710',name:'남아프리카공화국',capital:'프리토리아',      cont:'africa'},
+  {id:'566',name:'나이지리아',     capital:'아부자',           cont:'africa'},
+  {id:'288',name:'가나',           capital:'아크라',           cont:'africa'},
+  {id:'434',name:'리비아',         capital:'트리폴리',         cont:'africa'},
+  {id:'716',name:'짐바브웨',       capital:'하라레',           cont:'africa'},
+  {id:'024',name:'앙골라',         capital:'루안다',           cont:'africa'},
+  {id:'894',name:'잠비아',         capital:'루사카',           cont:'africa'},
+  // Oceania
+  {id:'036',name:'호주',           capital:'캔버라',           cont:'oceania'},
+  {id:'554',name:'뉴질랜드',       capital:'웰링턴',           cont:'oceania'},
+  {id:'598',name:'파푸아뉴기니',   capital:'포트모르즈비',     cont:'oceania'},
+];
 
-        // 사진 조절
-        const cCanvas = document.getElementById('cropCanvas'), cctx = cCanvas.getContext('2d');
-        let rawImg = null, cropPos = { x: 150, y: 150 }, isDragging = false, lastX, lastY;
+// ══════════════════════════════════════
+// MAP MODULE
+// ══════════════════════════════════════
+const MAP = (() => {
+  let svg, proj, path, cpaths;
+  let W, H, clickCb = null;
 
-        function openUpload(p) { activeP = (p === 'p1' ? p1 : p2); document.getElementById('fileInput').click(); }
+  function margins() {
+    return [[20, 14], [W - 20, H - 145]];
+  }
 
-        document.getElementById('fileInput').onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                rawImg = new Image();
-                rawImg.onload = () => { document.getElementById('cropModal').style.display = 'flex'; drawCrop(); };
-                rawImg.src = ev.target.result;
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        };
+  async function init(wrap) {
+    W = wrap.clientWidth;
+    H = wrap.clientHeight;
 
-        function drawCrop() {
-            cctx.clearRect(0, 0, 300, 300);
-            const z = document.getElementById('zoomRange').value;
-            cctx.drawImage(rawImg, cropPos.x - (rawImg.width*z)/2, cropPos.y - (rawImg.height*z)/2, rawImg.width*z, rawImg.height*z);
-            cctx.strokeStyle = '#fbbf24'; cctx.lineWidth = 4; cctx.beginPath(); cctx.arc(150, 150, 145, 0, Math.PI*2); cctx.stroke();
-        }
+    svg = d3.select('#world-svg').attr('viewBox', `0 0 ${W} ${H}`);
+    proj = d3.geoNaturalEarth1().fitExtent(margins(), {type:'Sphere'});
+    path = d3.geoPath().projection(proj);
 
-        cCanvas.onmousedown = (e) => { isDragging = true; lastX = e.clientX; lastY = e.clientY; };
-        window.onmousemove = (e) => { if(isDragging) { cropPos.x += (e.clientX-lastX); cropPos.y += (e.clientY-lastY); lastX=e.clientX; lastY=e.clientY; drawCrop(); }};
-        window.onmouseup = () => isDragging = false;
+    const topo = await d3.json(
+      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
+    );
 
-        function saveCrop() {
-            const temp = document.createElement('canvas'); temp.width = 200; temp.height = 200;
-            const tCtx = temp.getContext('2d');
-            tCtx.beginPath(); tCtx.arc(100, 100, 100, 0, Math.PI*2); tCtx.clip();
-            tCtx.drawImage(cCanvas, 50, 50, 200, 200, 0, 0, 200, 200);
-            activeP.face = new Image(); activeP.face.src = temp.toDataURL();
-            
-            // 사진 저장 시 이름/능력치 랜덤 생성
-            activeP.name = nicks[Math.floor(Math.random()*nicks.length)];
-            activeP.stats = [
-                `${statsPool[Math.floor(Math.random()*statsPool.length)]} ${Math.floor(Math.random()*99)}`,
-                `${statsPool[Math.floor(Math.random()*statsPool.length)]} ${Math.floor(Math.random()*99)}`
-            ];
-            updateUI();
-            document.getElementById('cropModal').style.display = 'none';
-        }
+    const defs = svg.append('defs');
+    defs.append('clipPath').attr('id','sclip')
+      .append('path').datum({type:'Sphere'}).attr('d', path);
 
-        function updateUI() {
-            document.getElementById('name1').innerText = p1.name;
-            document.getElementById('name2').innerText = p2.name;
-            document.getElementById('s1').innerHTML = p1.stats.map(s => `<span class="stat-badge">${s}</span>`).join('');
-            document.getElementById('s2').innerHTML = p2.stats.map(s => `<span class="stat-badge">${s}</span>`).join('');
-        }
+    const g = svg.append('g').attr('clip-path','url(#sclip)');
 
-        function drawChar(p, isP1) {
-            const bob = Math.sin(Date.now() / 150) * 8;
-            ctx.save();
-            ctx.translate(p.x, p.y + bob);
-            if(!isP1) ctx.scale(-1, 1);
+    g.append('path').datum({type:'Sphere'})
+      .attr('d', path).style('fill', OCEAN).attr('pointer-events','none');
 
-            // 몸통 포즈
-            ctx.shadowBlur = 15; ctx.shadowColor = isP1 ? "#0ea5e9" : "#f43f5e";
-            ctx.strokeStyle = isP1 ? "#0ea5e9" : "#f43f5e"; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(-35, 20); ctx.lineTo(35, 20); ctx.lineTo(25, 100); ctx.lineTo(-25, 100); ctx.closePath();
-            ctx.fillStyle = "#1e293b"; ctx.fill(); ctx.stroke();
-            
-            // 팔/다리
-            ctx.beginPath(); ctx.moveTo(-35, 30); ctx.lineTo(-60, 60); ctx.lineTo(-40, 80); // 팔
-            ctx.moveTo(-20, 100); ctx.lineTo(-40, 150); ctx.lineTo(-70, 150); // 다리
-            ctx.moveTo(20, 100); ctx.lineTo(40, 150); ctx.lineTo(70, 150); // 다리
-            ctx.stroke();
+    g.append('path').datum(d3.geoGraticule()())
+      .attr('d', path).attr('fill','none')
+      .attr('stroke','rgba(255,255,255,.04)').attr('stroke-width','.5')
+      .attr('pointer-events','none');
 
-            // 얼굴
-            if(p.face) {
-                ctx.save(); ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.clip();
-                ctx.drawImage(p.face, -70, -130, 140, 140); ctx.restore();
-                ctx.stroke();
-            } else {
-                ctx.fillStyle = "#334155"; ctx.beginPath(); ctx.arc(0, -60, 70, 0, Math.PI*2); ctx.fill(); ctx.stroke();
-            }
-            ctx.restore();
-        }
+    const feats = topojson.feature(topo, topo.objects.countries).features
+      .filter(d => d.id !== 10);
 
-        async function startBattle() {
-            if(isFighting || !p1.face || !p2.face) return;
-            isFighting = true;
-            while(p1.hp > 0 && p2.hp > 0) {
-                await doAtk(p1, p2, true); if(p2.hp <= 0) break;
-                await new Promise(r => setTimeout(r, 600));
-                await doAtk(p2, p1, false);
-                await new Promise(r => setTimeout(r, 600));
-            }
-            alert(`게임 종료! 승리: ${p1.hp>0?p1.name:p2.name}`);
-            location.reload();
-        }
+    cpaths = g.selectAll('.cpath').data(feats).enter()
+      .append('path').attr('class','cpath')
+      .attr('d', path).style('fill', UNSEEN)
+      .attr('stroke','rgba(255,255,255,.22)').attr('stroke-width','.5')
+      .on('click', (e, d) => { if(clickCb) clickCb(String(d.id)); })
+      .on('touchstart', function(e, d) {
+        e.preventDefault();
+        if(clickCb) clickCb(String(d.id));
+      }, {passive:false});
 
-        async function doAtk(a, d, isP1) {
-            msg = { text: phrases[Math.floor(Math.random()*phrases.length)], life: 70 };
-            const startX = a.x; a.x = isP1 ? d.x - 100 : d.x + 100; shake = 20;
-            d.hp = Math.max(0, d.hp - 20);
-            document.getElementById(isP1?'hp2':'hp1').style.width = (isP1?p2.hp:p1.hp) + "%";
-            await new Promise(r => setTimeout(r, 300));
-            a.x = startX;
-        }
+    g.append('path')
+      .datum(topojson.mesh(topo, topo.objects.countries, (a,b) => a!==b))
+      .attr('d', path).attr('fill','none')
+      .attr('stroke','rgba(255,255,255,.1)').attr('stroke-width','.3')
+      .attr('pointer-events','none');
 
-        function loop() {
-            ctx.clearRect(0, 0, 1200, 675);
-            if(shake > 0) { ctx.save(); ctx.translate(Math.random()*shake-shake/2, Math.random()*shake-shake/2); shake *= 0.8; }
-            
-            // 바닥 격자
-            ctx.strokeStyle = "rgba(14, 165, 233, 0.2)"; ctx.lineWidth = 1;
-            for(let i=0; i<12; i++) { ctx.beginPath(); ctx.moveTo(0, 480+i*20); ctx.lineTo(1200, 480+i*20); ctx.stroke(); }
-            
-            drawChar(p1, true); drawChar(p2, false);
-            if(msg.life > 0) {
-                ctx.fillStyle = "#fbbf24"; ctx.font = "bold 40px Jua"; ctx.textAlign = "center";
-                ctx.fillText(battleMsg = msg.text, 600, 250); msg.life--;
-            }
-            if(shake > 0) ctx.restore();
-            requestAnimationFrame(loop);
-        }
-        loop();
-    </script>
+    svg.append('path').datum({type:'Sphere'})
+      .attr('d', path).attr('fill','none')
+      .attr('stroke','rgba(100,180,255,.35)').attr('stroke-width','1.2')
+      .attr('pointer-events','none');
+
+    let t;
+    new ResizeObserver(() => { clearTimeout(t); t = setTimeout(resize, 160); })
+      .observe(wrap);
+  }
+
+  function resize() {
+    const wrap = document.getElementById('map-wrap');
+    W = wrap.clientWidth; H = wrap.clientHeight;
+    svg.attr('viewBox', `0 0 ${W} ${H}`);
+    proj.fitExtent(margins(), {type:'Sphere'});
+    svg.selectAll('path').attr('d', path);
+  }
+
+  function flashOk(id, finalColor) {
+    const p = cpaths && cpaths.filter(d => String(d.id) === id);
+    if(!p || p.empty()) return;
+    p.style('fill','#86efac');
+    setTimeout(() => p.transition().duration(550).style('fill', finalColor), 120);
+  }
+
+  function flashNg(id) {
+    const p = cpaths && cpaths.filter(d => String(d.id) === id);
+    if(!p || p.empty()) return;
+    p.style('fill','#ef4444');
+    setTimeout(() => p.transition().duration(480).style('fill', UNSEEN), 340);
+  }
+
+  function reset() {
+    cpaths && cpaths.interrupt().style('fill', UNSEEN);
+  }
+
+  function onClick(fn) { clickCb = fn; }
+
+  return {init, flashOk, flashNg, reset, onClick};
+})();
+
+// ══════════════════════════════════════
+// UI MODULE
+// ══════════════════════════════════════
+const UI = (() => {
+  const $ = id => document.getElementById(id);
+
+  const show = id => $(id).classList.remove('hide');
+  const hide = id => $(id).classList.add('hide');
+
+  function showGame() {
+    $('game-header').style.display = 'flex';
+    $('qcard').style.display = 'block';
+    $('legend').style.display = 'flex';
+  }
+
+  function setCapital(txt) {
+    const el = $('cap-name');
+    el.classList.remove('pop'); void el.offsetWidth;
+    el.textContent = txt;
+    el.classList.add('pop');
+  }
+
+  function feedback(txt, type) {
+    const el = $('fb-msg');
+    el.classList.remove('pop','ok','ng'); void el.offsetWidth;
+    el.textContent = txt;
+    el.className = 'pop ' + type;
+  }
+
+  function clearFb() { $('fb-msg').textContent=''; $('fb-msg').className=''; }
+
+  function score(s, t) { $('score-disp').textContent = `${s} / ${t}`; }
+
+  function lives(n) {
+    $('lives-disp').textContent = '❤️'.repeat(Math.max(0,n)) + '🖤'.repeat(Math.max(0,3-n));
+  }
+
+  function progress(i, t) {
+    $('prog-fill').style.width = (t ? Math.round(i/t*100) : 0) + '%';
+  }
+
+  function getRank(s, t) {
+    const p = s/t;
+    if(p===1)   return {title:'지리왕 👑',     stars:5, enc:'완벽합니다! 당신은 세계 최강의 지리왕이에요! 정말 놀라워요! 🏆'};
+    if(p>=0.85) return {title:'지리마스터 🌍', stars:4, enc:'훌륭해요! 거의 다 맞혔어요! 조금만 더 하면 지리왕이 될 수 있어요! 💪'};
+    if(p>=0.65) return {title:'탐험가 🧭',     stars:3, enc:'좋은 실력이에요! 세계를 향한 열정이 느껴져요. 계속 도전해봐요! 🌟'};
+    if(p>=0.42) return {title:'여행자 ✈️',     stars:2, enc:'더 공부해봐요! 세계를 알아가는 즐거움을 느껴보세요. 파이팅! 🚀'};
+    if(p>=0.21) return {title:'지도 초보 🗺️', stars:1, enc:'계속 도전하세요! 한 번에 완벽할 필요 없어요. 반복하면 느는 거예요! ⭐'};
+    return             {title:'지리 신입 📚',  stars:0, enc:'처음부터 다시 도전해봐요! 당신도 분명 잘 할 수 있어요! 화이팅! 🔥'};
+  }
+
+  function endScreen(s, t, answered, questions) {
+    const r = getRank(s, t);
+    $('end-rank').textContent  = r.title;
+    $('end-stars').textContent = '⭐'.repeat(r.stars) + '☆'.repeat(5-r.stars);
+    $('end-score').textContent = `${s} / ${t} 정답`;
+    $('end-enc').textContent   = r.enc;
+
+    const list = $('end-list');
+    list.innerHTML = '';
+    // correct first, then missed
+    [...questions.filter(q => answered.has(q.id)),
+     ...questions.filter(q => !answered.has(q.id))].forEach(q => {
+      const ok = answered.has(q.id);
+      const div = document.createElement('div');
+      div.className = 'cr ' + (ok ? 'ok' : 'ng');
+      div.innerHTML =
+        `<span>${ok ? '✅' : '❌'}</span>` +
+        `<span class="cr-name">${q.name}</span>` +
+        `<span class="cr-arr">→</span>` +
+        `<span class="cr-cap">${q.capital}</span>`;
+      list.appendChild(div);
+    });
+
+    show('scr-end');
+  }
+
+  return {show, hide, showGame, setCapital, feedback, clearFb, score, lives, progress, endScreen};
+})();
+
+// ══════════════════════════════════════
+// GAME MODULE
+// ══════════════════════════════════════
+const GAME = (() => {
+  let qs=[], idx=0, sc=0, lv=3, answered=new Set(), locked=false, playing=false;
+
+  function shuffle(a) {
+    const b = [...a];
+    for(let i=b.length-1; i>0; i--) {
+      const j = 0|Math.random()*(i+1);
+      [b[i],b[j]] = [b[j],b[i]];
+    }
+    return b;
+  }
+
+  function start() {
+    qs=shuffle(COUNTRIES); idx=0; sc=0; lv=3;
+    answered=new Set(); locked=false; playing=true;
+
+    MAP.reset();
+    UI.hide('scr-start'); UI.hide('scr-end');
+    UI.showGame();
+    UI.score(0, qs.length);
+    UI.lives(3);
+    UI.progress(0, qs.length);
+    ask(qs[0]);
+  }
+
+  function ask(q) {
+    UI.setCapital(q.capital);
+    UI.clearFb();
+    locked = false;
+  }
+
+  function click(fid) {
+    if(locked || !playing) return;
+    locked = true;
+    const q = qs[idx];
+    fid === q.id ? correct(q) : wrong(fid);
+  }
+
+  function correct(q) {
+    sc++; answered.add(q.id);
+    MAP.flashOk(q.id, CONT_COLOR[q.cont]);
+    UI.feedback(`🎉 정답! ${q.name}`, 'ok');
+    UI.score(sc, qs.length);
+    UI.progress(idx+1, qs.length);
+    setTimeout(next, 1100);
+  }
+
+  function wrong(fid) {
+    lv--;
+    MAP.flashNg(fid);
+    UI.feedback('❌ 틀렸어요! 다시 찾아보세요', 'ng');
+    UI.lives(lv);
+    setTimeout(() => { lv<=0 ? end() : (locked=false); }, 950);
+  }
+
+  function next() {
+    idx++;
+    idx >= qs.length ? end() : ask(qs[idx]);
+  }
+
+  function end() {
+    playing = false;
+    UI.endScreen(sc, qs.length, answered, qs);
+  }
+
+  return {start, click};
+})();
+
+// ══════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════
+(async () => {
+  try {
+    await MAP.init(document.getElementById('map-wrap'));
+    MAP.onClick(id => GAME.click(id));
+    document.getElementById('scr-load').classList.add('hide');
+    UI.show('scr-start');
+  } catch(e) {
+    console.error(e);
+    document.getElementById('scr-load').innerHTML =
+      '<p style="color:#f87171;text-align:center;padding:24px;font-size:15px">' +
+      '지도를 불러올 수 없어요.<br>인터넷 연결을 확인해주세요.<br>' +
+      '<button onclick="location.reload()" style="margin-top:14px;padding:10px 22px;' +
+      'background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">' +
+      '다시 시도</button></p>';
+  }
+
+  document.getElementById('btn-start').addEventListener('click', () => GAME.start());
+  document.getElementById('btn-retry').addEventListener('click', () => {
+    UI.hide('scr-end');
+    GAME.start();
+  });
+})();
+</script>
 </body>
 </html>
