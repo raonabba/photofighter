@@ -10,617 +10,418 @@
 <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{display:flex;flex-direction:column;height:100dvh;overflow:hidden;background:#0a1628;font-family:'Noto Sans KR',sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
 
-body{
-  display:flex;flex-direction:column;height:100dvh;overflow:hidden;
-  background:#0a1628;font-family:'Noto Sans KR',sans-serif;
-  color:#fff;user-select:none;-webkit-user-select:none;
-}
+/* ── Overlays ── */
+.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:80;transition:opacity .3s}
+.ov.hide{opacity:0;pointer-events:none}
+#scr-load{background:#0a1628;z-index:100;gap:16px}
+.spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.1);border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
 
-/* ── Header ─────────────────────────────── */
-#game-header{
-  display:none;flex-shrink:0;height:52px;
-  align-items:center;justify-content:space-between;
-  padding:0 12px;
-  background:rgba(10,22,40,0.97);
-  border-bottom:1px solid rgba(255,255,255,0.1);
-  z-index:10;gap:8px;
-}
-.hdr-title{font-size:13px;font-weight:700;color:#93c5fd;white-space:nowrap}
-.hdr-center{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
-#score-disp{font-size:12px;font-weight:700;color:#fbbf24}
-#prog-bar{width:100%;max-width:120px;height:4px;background:rgba(255,255,255,0.12);border-radius:2px;overflow:hidden}
-#prog-fill{height:100%;width:0%;background:linear-gradient(90deg,#4ade80,#22c55e);transition:width .4s ease;border-radius:2px}
-.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:2px;white-space:nowrap}
-#lives-disp{font-size:12px;font-weight:700;color:#f87171}
-#wrong-disp{font-size:12px;font-weight:700;color:#fb923c}
+/* Name screen */
+#scr-name{background:radial-gradient(ellipse at 50% 40%,#1a3a5c,#0a1628 70%);gap:14px;padding:28px 24px;text-align:center;z-index:90}
+.globe{font-size:64px;animation:float 3s ease-in-out infinite;line-height:1}
+.big-title{font-size:28px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.name-in{width:100%;max-width:280px;padding:13px 18px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);border-radius:14px;font-size:18px;font-weight:700;font-family:'Noto Sans KR',sans-serif;color:#fff;text-align:center;outline:none;transition:border-color .2s}
+.name-in:focus{border-color:#60a5fa}
+.name-in::placeholder{color:rgba(255,255,255,.3);font-weight:400}
+.hint-rules{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 16px;font-size:13px;color:rgba(255,255,255,.6);line-height:1.85;text-align:left;max-width:290px;width:100%}
 
-/* ── Map ───────────────────────────────── */
-#map-wrap{flex:1;position:relative;overflow:hidden;cursor:grab}
-#map-wrap:active{cursor:grabbing}
-#world-svg{width:100%;height:100%;display:block;touch-action:none}
-.cpath{cursor:pointer}
+/* Game Over */
+#scr-go{background:rgba(8,16,30,.98);z-index:85;flex-direction:column;overflow:hidden;justify-content:flex-start;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+.go-top{flex-shrink:0;padding:20px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
+#go-ttl{font-size:22px;font-weight:900;margin-bottom:5px}
+#go-stat{font-size:13px;color:rgba(255,255,255,.6)}
+.sec-hdr{flex-shrink:0;padding:9px 16px 3px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1.2px;text-transform:uppercase}
+#ans-list{flex:1;overflow-y:auto;padding:0 10px 8px;-webkit-overflow-scrolling:touch}
+.ar{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;margin-bottom:3px;font-size:13px}
+.ar.ok{background:rgba(74,222,128,.07)}
+.ar.ng{background:rgba(248,113,113,.07)}
+.ar-nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ar.ok .ar-nm{color:#86efac}
+.ar.ng .ar-nm{color:#fca5a5}
+.ar-arr{color:rgba(255,255,255,.25)}
+.ar-cap{flex-shrink:0;font-size:12px;color:rgba(255,255,255,.8);min-width:80px;text-align:right}
+.bot-foot{flex-shrink:0;padding:10px 20px 18px;text-align:center;border-top:1px solid rgba(255,255,255,.07)}
 
-/* ── Zoom Controls ───────────────────────── */
-#zoom-ctrl{
-  display:none;position:absolute;right:10px;bottom:160px;
-  flex-direction:column;gap:6px;z-index:18;
-}
-.zbtn{
-  width:38px;height:38px;
-  background:rgba(10,22,40,0.88);border:1px solid rgba(255,255,255,0.18);
-  border-radius:9px;color:#fff;font-size:17px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-  transition:background .15s;
-}
-.zbtn:active{background:rgba(59,130,246,0.5)}
+/* Victory */
+#scr-vic{background:radial-gradient(ellipse at 50% 40%,#1a3a28,#0a1628 70%);z-index:85;gap:14px;padding:32px 24px;text-align:center}
+#vic-ico{font-size:68px;animation:float 2s ease-in-out infinite;line-height:1}
+#vic-ttl{font-size:26px;font-weight:900;background:linear-gradient(135deg,#4ade80,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+#vic-msg{font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;max-width:270px}
+#vic-stat{font-size:15px;font-weight:700;color:#fbbf24}
 
-/* ── Question Card ──────────────────────── */
-#qcard{
-  display:none;
-  position:absolute;bottom:0;left:0;right:0;
-  background:linear-gradient(to top,rgba(8,18,34,.98) 72%,transparent);
-  padding:14px 20px max(22px,env(safe-area-inset-bottom));
-  text-align:center;z-index:20;pointer-events:none;
-}
-.q-label{font-size:10px;color:rgba(255,255,255,.4);letter-spacing:2px;text-transform:uppercase;margin-bottom:2px}
-#cap-name{font-size:30px;font-weight:900;line-height:1.1;margin-bottom:4px}
-#cap-name.pop{animation:popIn .28s ease-out both}
-.q-hint{font-size:11px;color:rgba(255,255,255,.35);margin-bottom:6px}
-#fb-msg{font-size:13px;font-weight:700;min-height:20px}
-#fb-msg.ok{color:#4ade80}
-#fb-msg.ng{color:#f87171}
-#fb-msg.pop{animation:popIn .28s ease-out both}
+/* Button */
+.btn{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:none;border-radius:50px;padding:12px 34px;font-size:17px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,.4);transition:transform .12s,box-shadow .12s}
+.btn:active{transform:scale(.95)}
 
-/* ── Legend ─────────────────────────────── */
-#legend{
-  display:none;position:absolute;top:8px;left:8px;
-  flex-direction:column;gap:3px;
-  background:rgba(8,18,34,.82);border-radius:8px;padding:7px 10px;
-  z-index:15;pointer-events:none;
-}
-.li{display:flex;align-items:center;gap:5px;font-size:10px;color:rgba(255,255,255,.65)}
-.ld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+/* ── Game Layout ── */
+#gw{display:none;flex-direction:column;height:100dvh}
+#ghdr{flex-shrink:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:rgba(10,22,40,.97);border-bottom:1px solid rgba(255,255,255,.08);gap:6px}
+#h-name{font-size:13px;font-weight:700;color:#93c5fd;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#h-score{font-size:12px;font-weight:700;color:#4ade80}
+#h-wrong{font-size:12px;font-weight:700;color:#f87171}
 
-/* ── Overlay screens ────────────────────── */
-.overlay{
-  position:fixed;inset:0;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
-  z-index:90;transition:opacity .35s ease;
-}
-.overlay.hide{opacity:0;pointer-events:none}
+#map-area{flex:1;position:relative;overflow:hidden;min-height:0}
+#world-svg{width:100%;height:100%;display:block}
+.cp{pointer-events:none;transition:fill .4s}
+.cp.cur{stroke:#fbbf24!important;stroke-width:2px!important;animation:pulse 1.2s ease-in-out infinite}
+#mleg{position:absolute;top:6px;left:6px;display:flex;flex-direction:column;gap:2px;background:rgba(8,18,34,.82);border-radius:7px;padding:5px 8px;pointer-events:none}
+.li{display:flex;align-items:center;gap:4px;font-size:9px;color:rgba(255,255,255,.6)}
+.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+#mprog{position:absolute;top:6px;right:6px;background:rgba(8,18,34,.82);border-radius:7px;padding:4px 7px;font-size:10px;font-weight:700;color:#4ade80;pointer-events:none}
 
-#scr-load{background:#0a1628;z-index:100;gap:18px}
-.spin{width:44px;height:44px;border:4px solid rgba(255,255,255,.12);border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
-.load-txt{font-size:15px;color:rgba(255,255,255,.45)}
+/* Quiz area */
+#quiz{flex-shrink:0;background:rgba(8,18,34,.99);border-top:1px solid rgba(255,255,255,.07)}
+#question{padding:8px 16px 4px;text-align:center}
+#q-ctry{font-size:20px;font-weight:900;color:#60a5fa}
+.q-suf{font-size:16px;color:rgba(255,255,255,.8)}
+.q-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:1px}
+#q-fb{height:17px;text-align:center;font-size:11px;font-weight:700;margin:2px 0}
+#q-fb.ok{color:#4ade80}
+#q-fb.ng{color:#f87171}
+#cards{display:flex;flex-wrap:wrap;gap:7px;padding:5px 10px max(12px,env(safe-area-inset-bottom));justify-content:center}
+.card{width:calc(50% - 4px);background:linear-gradient(145deg,rgba(18,32,58,.95),rgba(10,20,40,.95));border:2px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:transform .1s,border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.card:active{transform:scale(.93)}
+.card.ok{border-color:#4ade80!important;background:linear-gradient(145deg,rgba(74,222,128,.2),rgba(34,197,94,.08))!important;pointer-events:none;animation:cok .35s ease-out}
+.card.ng{border-color:#ef4444!important;background:linear-gradient(145deg,rgba(239,68,68,.2),rgba(220,38,38,.08))!important;animation:shake .3s ease-out}
+.ce{font-size:28px;line-height:1.1}
+.ct{font-size:12px;font-weight:700;text-align:center;line-height:1.3;color:rgba(255,255,255,.9)}
 
-#scr-start{background:radial-gradient(ellipse at 50% 40%,#1a3a5c,#0a1628 70%);gap:14px;padding:28px 24px;text-align:center}
-.globe-ico{font-size:68px;animation:float 3s ease-in-out infinite;line-height:1}
-.s-title{font-size:30px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.s-sub{font-size:14px;color:rgba(255,255,255,.5);line-height:1.7;max-width:260px}
-.rules{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:12px 16px;font-size:13px;color:rgba(255,255,255,.65);line-height:1.9;text-align:left;max-width:290px;width:100%}
-
-#scr-end{
-  background:rgba(8,16,30,.98);z-index:92;
-  flex-direction:column;overflow:hidden;
-  padding-top:env(safe-area-inset-top);
-  padding-bottom:env(safe-area-inset-bottom);
-  justify-content:flex-start;
-}
-.end-hdr{flex-shrink:0;padding:22px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
-#end-rank{font-size:26px;font-weight:900;margin-bottom:3px}
-#end-stars{font-size:20px;letter-spacing:4px;margin-bottom:6px}
-#end-score{font-size:19px;font-weight:700;color:#fbbf24;margin-bottom:4px}
-#end-wrong{font-size:13px;color:#fb923c;margin-bottom:6px}
-#end-enc{font-size:13px;color:rgba(255,255,255,.7);line-height:1.6;max-width:310px;margin:0 auto}
-.list-hdr{flex-shrink:0;padding:10px 16px 4px;font-size:11px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase}
-#end-list{flex:1;overflow-y:auto;padding:0 10px 8px;-webkit-overflow-scrolling:touch}
-.cr{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;margin-bottom:3px;font-size:13px}
-.cr.ok{background:rgba(74,222,128,.07)}
-.cr.ng{background:rgba(248,113,113,.07)}
-.cr-name{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.cr.ok .cr-name{color:#86efac}
-.cr.ng .cr-name{color:#fca5a5}
-.cr-arr{color:rgba(255,255,255,.25);flex-shrink:0}
-.cr-cap{flex-shrink:0;color:rgba(255,255,255,.8);font-size:12px;text-align:right;min-width:70px}
-.end-foot{flex-shrink:0;padding:10px 20px 18px;text-align:center;border-top:1px solid rgba(255,255,255,.07)}
-
-.btn{
-  background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:none;
-  border-radius:50px;padding:13px 38px;font-size:17px;font-weight:700;
-  font-family:'Noto Sans KR',sans-serif;cursor:pointer;
-  box-shadow:0 4px 22px rgba(59,130,246,.4);transition:transform .15s,box-shadow .15s;
-}
-.btn:active{transform:scale(.96);box-shadow:0 2px 10px rgba(59,130,246,.3)}
-
-@keyframes spin  {to{transform:rotate(360deg)}}
-@keyframes float {0%,100%{transform:translateY(0)}50%{transform:translateY(-11px)}}
-@keyframes popIn {0%{transform:scale(.65);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+/* Keyframes */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+@keyframes pulse{0%,100%{filter:drop-shadow(0 0 3px #fbbf24)}50%{filter:drop-shadow(0 0 8px #fbbf24);opacity:.7}}
+@keyframes cok{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
 </style>
 </head>
 <body>
 
-<!-- Loading -->
-<div class="overlay" id="scr-load">
-  <div class="spin"></div>
-  <p class="load-txt">세계지도 불러오는 중…</p>
+<div class="ov" id="scr-load"><div class="spin"></div><p style="font-size:14px;color:rgba(255,255,255,.4)">세계지도 불러오는 중…</p></div>
+
+<div class="ov hide" id="scr-name">
+  <div class="globe">🌍</div>
+  <h1 class="big-title">세계 수도 퀴즈</h1>
+  <input class="name-in" id="name-in" type="text" placeholder="이름을 입력하세요" maxlength="12" autocomplete="off">
+  <div class="hint-rules">
+    🎯 나라 이름을 보고 수도를 맞춰요<br>
+    🃏 5개 카드 중 정답을 선택하세요<br>
+    ❤️ 틀리는 건 10번까지 허용돼요<br>
+    🌍 71개 나라 수도를 모두 완파하세요!
+  </div>
+  <button class="btn" id="btn-go">게임 시작 🚀</button>
 </div>
 
-<!-- Start -->
-<div class="overlay hide" id="scr-start">
-  <div class="globe-ico">🌍</div>
-  <h1 class="s-title">세계 수도 퀴즈</h1>
-  <p class="s-sub">수도 이름을 보고<br>지도에서 나라를 찾아보세요!</p>
-  <div class="rules">
-    🎯 수도 이름이 화면에 표시됩니다<br>
-    🗺️ 지도를 확대해서 나라를 클릭하세요<br>
-    ❤️ 목숨 10개 — 틀리면 하나씩 줄어요<br>
-    🔍 두 손가락 핀치 또는 스크롤로 확대!
-  </div>
-  <button class="btn" id="btn-start">게임 시작</button>
+<div class="ov hide" id="scr-go">
+  <div class="go-top"><div id="go-ttl"></div><div id="go-stat"></div></div>
+  <div class="sec-hdr">나라 ↔ 수도 정답표</div>
+  <div id="ans-list"></div>
+  <div class="bot-foot"><button class="btn" id="btn-retry-go">다시 도전 🚀</button></div>
 </div>
 
-<!-- End -->
-<div class="overlay hide" id="scr-end">
-  <div class="end-hdr">
-    <div id="end-rank"></div>
-    <div id="end-stars"></div>
-    <div id="end-score"></div>
-    <div id="end-wrong"></div>
-    <div id="end-enc"></div>
-  </div>
-  <div class="list-hdr">나라 ↔ 수도 정답표</div>
-  <div id="end-list"></div>
-  <div class="end-foot">
-    <button class="btn" id="btn-retry">다시 도전 🚀</button>
-  </div>
+<div class="ov hide" id="scr-vic">
+  <div id="vic-ico">🏆</div>
+  <div id="vic-ttl"></div>
+  <div id="vic-msg"></div>
+  <div id="vic-stat"></div>
+  <button class="btn" id="btn-retry-vic">다시 도전 🚀</button>
 </div>
 
-<!-- Game Header -->
-<header id="game-header">
-  <span class="hdr-title">🌍 수도 퀴즈</span>
-  <div class="hdr-center">
-    <span id="score-disp">0 / 71</span>
-    <div id="prog-bar"><div id="prog-fill"></div></div>
+<div id="gw">
+  <header id="ghdr">
+    <span id="h-name">플레이어</span>
+    <span id="h-score">정답 0 / 71</span>
+    <span id="h-wrong">❌ 0 / 10</span>
+  </header>
+  <div id="map-area">
+    <svg id="world-svg"></svg>
+    <div id="mleg">
+      <div class="li"><div class="ld" style="background:#4ade80"></div>아메리카</div>
+      <div class="li"><div class="ld" style="background:#a78bfa"></div>유럽</div>
+      <div class="li"><div class="ld" style="background:#fb923c"></div>아시아</div>
+      <div class="li"><div class="ld" style="background:#fbbf24"></div>아프리카</div>
+      <div class="li"><div class="ld" style="background:#2dd4bf"></div>오세아니아</div>
+    </div>
+    <div id="mprog">0 / 71 ✅</div>
   </div>
-  <div class="hdr-right">
-    <span id="lives-disp">❤️ 10</span>
-    <span id="wrong-disp">❌ 0</span>
+  <div id="quiz">
+    <div id="question">
+      <div><span id="q-ctry">—</span><span class="q-suf">의 수도는?</span></div>
+      <div class="q-sub">아래 카드에서 수도를 찾아보세요 🃏</div>
+    </div>
+    <div id="q-fb"></div>
+    <div id="cards"></div>
   </div>
-</header>
-
-<!-- Map -->
-<div id="map-wrap">
-  <svg id="world-svg"></svg>
-  <!-- Legend -->
-  <div id="legend">
-    <div class="li"><div class="ld" style="background:#4ade80"></div>아메리카</div>
-    <div class="li"><div class="ld" style="background:#a78bfa"></div>유럽</div>
-    <div class="li"><div class="ld" style="background:#fb923c"></div>아시아</div>
-    <div class="li"><div class="ld" style="background:#fbbf24"></div>아프리카</div>
-    <div class="li"><div class="ld" style="background:#2dd4bf"></div>오세아니아</div>
-  </div>
-  <!-- Zoom controls -->
-  <div id="zoom-ctrl">
-    <button class="zbtn" id="zbtn-in"  title="확대">＋</button>
-    <button class="zbtn" id="zbtn-out" title="축소">－</button>
-    <button class="zbtn" id="zbtn-rst" title="초기화">⌂</button>
-  </div>
-</div>
-
-<!-- Question Card -->
-<div id="qcard">
-  <p class="q-label">이 수도가 있는 나라는?</p>
-  <h2 id="cap-name">—</h2>
-  <p class="q-hint">지도를 확대 후 나라를 클릭하세요 🔍</p>
-  <div id="fb-msg"></div>
 </div>
 
 <script>
-// ════════════════════════════════════════
-// DATA
-// ════════════════════════════════════════
-const OCEAN  = '#1a3a5c';
-const UNSEEN = '#4a5568';
-const CONT_COLOR = {
-  americas:'#4ade80', europe:'#a78bfa',
-  asia:'#fb923c', africa:'#fbbf24', oceania:'#2dd4bf'
-};
+const OCEAN='#1a3a5c', UNSEEN='#2d3a4a';
+const CC={americas:'#4ade80',europe:'#a78bfa',asia:'#fb923c',africa:'#fbbf24',oceania:'#2dd4bf'};
+const MAX_WRONG=10;
 
-const COUNTRIES = [
-  // Americas
-  {id:'840',name:'미국',           capital:'워싱턴 D.C.',     cont:'americas'},
-  {id:'124',name:'캐나다',         capital:'오타와',           cont:'americas'},
-  {id:'484',name:'멕시코',         capital:'멕시코시티',       cont:'americas'},
-  {id:'076',name:'브라질',         capital:'브라질리아',       cont:'americas'},
-  {id:'032',name:'아르헨티나',     capital:'부에노스아이레스', cont:'americas'},
-  {id:'152',name:'칠레',           capital:'산티아고',         cont:'americas'},
-  {id:'170',name:'콜롬비아',       capital:'보고타',           cont:'americas'},
-  {id:'604',name:'페루',           capital:'리마',             cont:'americas'},
-  {id:'862',name:'베네수엘라',     capital:'카라카스',         cont:'americas'},
-  {id:'858',name:'우루과이',       capital:'몬테비데오',       cont:'americas'},
-  {id:'192',name:'쿠바',           capital:'아바나',           cont:'americas'},
-  {id:'218',name:'에콰도르',       capital:'키토',             cont:'americas'},
-  {id:'600',name:'파라과이',       capital:'아순시온',         cont:'americas'},
-  {id:'068',name:'볼리비아',       capital:'수크레',           cont:'americas'},
-  // Europe
-  {id:'276',name:'독일',           capital:'베를린',           cont:'europe'},
-  {id:'250',name:'프랑스',         capital:'파리',             cont:'europe'},
-  {id:'826',name:'영국',           capital:'런던',             cont:'europe'},
-  {id:'380',name:'이탈리아',       capital:'로마',             cont:'europe'},
-  {id:'724',name:'스페인',         capital:'마드리드',         cont:'europe'},
-  {id:'528',name:'네덜란드',       capital:'암스테르담',       cont:'europe'},
-  {id:'620',name:'포르투갈',       capital:'리스본',           cont:'europe'},
-  {id:'756',name:'스위스',         capital:'베른',             cont:'europe'},
-  {id:'040',name:'오스트리아',     capital:'빈',               cont:'europe'},
-  {id:'752',name:'스웨덴',         capital:'스톡홀름',         cont:'europe'},
-  {id:'578',name:'노르웨이',       capital:'오슬로',           cont:'europe'},
-  {id:'208',name:'덴마크',         capital:'코펜하겐',         cont:'europe'},
-  {id:'246',name:'핀란드',         capital:'헬싱키',           cont:'europe'},
-  {id:'616',name:'폴란드',         capital:'바르샤바',         cont:'europe'},
-  {id:'642',name:'루마니아',       capital:'부쿠레슈티',       cont:'europe'},
-  {id:'300',name:'그리스',         capital:'아테네',           cont:'europe'},
-  {id:'804',name:'우크라이나',     capital:'키이우',           cont:'europe'},
-  {id:'643',name:'러시아',         capital:'모스크바',         cont:'europe'},
-  // Asia
-  {id:'156',name:'중국',           capital:'베이징',           cont:'asia'},
-  {id:'392',name:'일본',           capital:'도쿄',             cont:'asia'},
-  {id:'410',name:'대한민국',       capital:'서울',             cont:'asia'},
-  {id:'356',name:'인도',           capital:'뉴델리',           cont:'asia'},
-  {id:'586',name:'파키스탄',       capital:'이슬라마바드',     cont:'asia'},
-  {id:'764',name:'태국',           capital:'방콕',             cont:'asia'},
-  {id:'704',name:'베트남',         capital:'하노이',           cont:'asia'},
-  {id:'360',name:'인도네시아',     capital:'자카르타',         cont:'asia'},
-  {id:'458',name:'말레이시아',     capital:'쿠알라룸푸르',     cont:'asia'},
-  {id:'608',name:'필리핀',         capital:'마닐라',           cont:'asia'},
-  {id:'104',name:'미얀마',         capital:'네피도',           cont:'asia'},
-  {id:'116',name:'캄보디아',       capital:'프놈펜',           cont:'asia'},
-  {id:'400',name:'요르단',         capital:'암만',             cont:'asia'},
-  {id:'368',name:'이라크',         capital:'바그다드',         cont:'asia'},
-  {id:'364',name:'이란',           capital:'테헤란',           cont:'asia'},
-  {id:'682',name:'사우디아라비아', capital:'리야드',           cont:'asia'},
-  {id:'792',name:'튀르키예',       capital:'앙카라',           cont:'asia'},
-  {id:'784',name:'아랍에미리트',   capital:'아부다비',         cont:'asia'},
-  {id:'496',name:'몽골',           capital:'울란바토르',       cont:'asia'},
-  {id:'398',name:'카자흐스탄',     capital:'아스타나',         cont:'asia'},
-  {id:'004',name:'아프가니스탄',   capital:'카불',             cont:'asia'},
-  {id:'524',name:'네팔',           capital:'카트만두',         cont:'asia'},
-  // Africa
-  {id:'818',name:'이집트',         capital:'카이로',           cont:'africa'},
-  {id:'504',name:'모로코',         capital:'라바트',           cont:'africa'},
-  {id:'012',name:'알제리',         capital:'알제',             cont:'africa'},
-  {id:'706',name:'소말리아',       capital:'모가디슈',         cont:'africa'},
-  {id:'231',name:'에티오피아',     capital:'아디스아바바',     cont:'africa'},
-  {id:'404',name:'케냐',           capital:'나이로비',         cont:'africa'},
-  {id:'834',name:'탄자니아',       capital:'도도마',           cont:'africa'},
-  {id:'710',name:'남아프리카공화국',capital:'프리토리아',      cont:'africa'},
-  {id:'566',name:'나이지리아',     capital:'아부자',           cont:'africa'},
-  {id:'288',name:'가나',           capital:'아크라',           cont:'africa'},
-  {id:'434',name:'리비아',         capital:'트리폴리',         cont:'africa'},
-  {id:'716',name:'짐바브웨',       capital:'하라레',           cont:'africa'},
-  {id:'024',name:'앙골라',         capital:'루안다',           cont:'africa'},
-  {id:'894',name:'잠비아',         capital:'루사카',           cont:'africa'},
-  // Oceania
-  {id:'036',name:'호주',           capital:'캔버라',           cont:'oceania'},
-  {id:'554',name:'뉴질랜드',       capital:'웰링턴',           cont:'oceania'},
-  {id:'598',name:'파푸아뉴기니',   capital:'포트모르즈비',     cont:'oceania'},
+const COUNTRIES=[
+  {id:'840',name:'미국',capital:'워싱턴 D.C.',emoji:'🦅',cont:'americas'},
+  {id:'124',name:'캐나다',capital:'오타와',emoji:'🍁',cont:'americas'},
+  {id:'484',name:'멕시코',capital:'멕시코시티',emoji:'🌮',cont:'americas'},
+  {id:'076',name:'브라질',capital:'브라질리아',emoji:'🌴',cont:'americas'},
+  {id:'032',name:'아르헨티나',capital:'부에노스아이레스',emoji:'💃',cont:'americas'},
+  {id:'152',name:'칠레',capital:'산티아고',emoji:'🏔️',cont:'americas'},
+  {id:'170',name:'콜롬비아',capital:'보고타',emoji:'☕',cont:'americas'},
+  {id:'604',name:'페루',capital:'리마',emoji:'🦙',cont:'americas'},
+  {id:'862',name:'베네수엘라',capital:'카라카스',emoji:'🌊',cont:'americas'},
+  {id:'858',name:'우루과이',capital:'몬테비데오',emoji:'🐄',cont:'americas'},
+  {id:'192',name:'쿠바',capital:'아바나',emoji:'🎷',cont:'americas'},
+  {id:'218',name:'에콰도르',capital:'키토',emoji:'🌋',cont:'americas'},
+  {id:'600',name:'파라과이',capital:'아순시온',emoji:'🌿',cont:'americas'},
+  {id:'068',name:'볼리비아',capital:'수크레',emoji:'⛏️',cont:'americas'},
+  {id:'276',name:'독일',capital:'베를린',emoji:'🐻',cont:'europe'},
+  {id:'250',name:'프랑스',capital:'파리',emoji:'🗼',cont:'europe'},
+  {id:'826',name:'영국',capital:'런던',emoji:'🎡',cont:'europe'},
+  {id:'380',name:'이탈리아',capital:'로마',emoji:'🏛️',cont:'europe'},
+  {id:'724',name:'스페인',capital:'마드리드',emoji:'🐂',cont:'europe'},
+  {id:'528',name:'네덜란드',capital:'암스테르담',emoji:'🌷',cont:'europe'},
+  {id:'620',name:'포르투갈',capital:'리스본',emoji:'🐓',cont:'europe'},
+  {id:'756',name:'스위스',capital:'베른',emoji:'🍫',cont:'europe'},
+  {id:'040',name:'오스트리아',capital:'빈',emoji:'🎻',cont:'europe'},
+  {id:'752',name:'스웨덴',capital:'스톡홀름',emoji:'⚓',cont:'europe'},
+  {id:'578',name:'노르웨이',capital:'오슬로',emoji:'🎿',cont:'europe'},
+  {id:'208',name:'덴마크',capital:'코펜하겐',emoji:'🧜',cont:'europe'},
+  {id:'246',name:'핀란드',capital:'헬싱키',emoji:'🧊',cont:'europe'},
+  {id:'616',name:'폴란드',capital:'바르샤바',emoji:'🦅',cont:'europe'},
+  {id:'642',name:'루마니아',capital:'부쿠레슈티',emoji:'🧛',cont:'europe'},
+  {id:'300',name:'그리스',capital:'아테네',emoji:'⚗️',cont:'europe'},
+  {id:'804',name:'우크라이나',capital:'키이우',emoji:'🌻',cont:'europe'},
+  {id:'643',name:'러시아',capital:'모스크바',emoji:'🧅',cont:'europe'},
+  {id:'156',name:'중국',capital:'베이징',emoji:'🐉',cont:'asia'},
+  {id:'392',name:'일본',capital:'도쿄',emoji:'⛩️',cont:'asia'},
+  {id:'410',name:'대한민국',capital:'서울',emoji:'🏯',cont:'asia'},
+  {id:'356',name:'인도',capital:'뉴델리',emoji:'🐘',cont:'asia'},
+  {id:'586',name:'파키스탄',capital:'이슬라마바드',emoji:'🌙',cont:'asia'},
+  {id:'764',name:'태국',capital:'방콕',emoji:'🛕',cont:'asia'},
+  {id:'704',name:'베트남',capital:'하노이',emoji:'🍜',cont:'asia'},
+  {id:'360',name:'인도네시아',capital:'자카르타',emoji:'🎭',cont:'asia'},
+  {id:'458',name:'말레이시아',capital:'쿠알라룸푸르',emoji:'🏙️',cont:'asia'},
+  {id:'608',name:'필리핀',capital:'마닐라',emoji:'🌺',cont:'asia'},
+  {id:'104',name:'미얀마',capital:'네피도',emoji:'🦚',cont:'asia'},
+  {id:'116',name:'캄보디아',capital:'프놈펜',emoji:'🌸',cont:'asia'},
+  {id:'400',name:'요르단',capital:'암만',emoji:'🌵',cont:'asia'},
+  {id:'368',name:'이라크',capital:'바그다드',emoji:'🏺',cont:'asia'},
+  {id:'364',name:'이란',capital:'테헤란',emoji:'🌹',cont:'asia'},
+  {id:'682',name:'사우디아라비아',capital:'리야드',emoji:'🕌',cont:'asia'},
+  {id:'792',name:'튀르키예',capital:'앙카라',emoji:'🌙',cont:'asia'},
+  {id:'784',name:'아랍에미리트',capital:'아부다비',emoji:'🌇',cont:'asia'},
+  {id:'496',name:'몽골',capital:'울란바토르',emoji:'⛺',cont:'asia'},
+  {id:'398',name:'카자흐스탄',capital:'아스타나',emoji:'🌐',cont:'asia'},
+  {id:'004',name:'아프가니스탄',capital:'카불',emoji:'❄️',cont:'asia'},
+  {id:'524',name:'네팔',capital:'카트만두',emoji:'🙏',cont:'asia'},
+  {id:'818',name:'이집트',capital:'카이로',emoji:'🔺',cont:'africa'},
+  {id:'504',name:'모로코',capital:'라바트',emoji:'🌴',cont:'africa'},
+  {id:'012',name:'알제리',capital:'알제',emoji:'🌅',cont:'africa'},
+  {id:'706',name:'소말리아',capital:'모가디슈',emoji:'⛵',cont:'africa'},
+  {id:'231',name:'에티오피아',capital:'아디스아바바',emoji:'🦓',cont:'africa'},
+  {id:'404',name:'케냐',capital:'나이로비',emoji:'🦁',cont:'africa'},
+  {id:'834',name:'탄자니아',capital:'도도마',emoji:'🦒',cont:'africa'},
+  {id:'710',name:'남아프리카공화국',capital:'프리토리아',emoji:'💎',cont:'africa'},
+  {id:'566',name:'나이지리아',capital:'아부자',emoji:'🛢️',cont:'africa'},
+  {id:'288',name:'가나',capital:'아크라',emoji:'🌍',cont:'africa'},
+  {id:'434',name:'리비아',capital:'트리폴리',emoji:'🏜️',cont:'africa'},
+  {id:'716',name:'짐바브웨',capital:'하라레',emoji:'🌿',cont:'africa'},
+  {id:'024',name:'앙골라',capital:'루안다',emoji:'🌊',cont:'africa'},
+  {id:'894',name:'잠비아',capital:'루사카',emoji:'💧',cont:'africa'},
+  {id:'036',name:'호주',capital:'캔버라',emoji:'🦘',cont:'oceania'},
+  {id:'554',name:'뉴질랜드',capital:'웰링턴',emoji:'🐑',cont:'oceania'},
+  {id:'598',name:'파푸아뉴기니',capital:'포트모르즈비',emoji:'🦜',cont:'oceania'},
 ];
 
-// ════════════════════════════════════════
-// MAP MODULE
-// ════════════════════════════════════════
-const MAP = (() => {
-  let svg, proj, path, cpaths, mapRoot, clipEl, sphereRing;
-  let W, H, clickCb = null;
-  let zoomBhv;
-  let pStart = null; // tap detection
-
-  function margins() {
-    return [[20, 14], [W - 20, H - 145]];
-  }
-
-  async function init(wrap) {
-    W = wrap.clientWidth;
-    H = wrap.clientHeight;
-
-    svg = d3.select('#world-svg').attr('viewBox', `0 0 ${W} ${H}`);
-    proj = d3.geoNaturalEarth1().fitExtent(margins(), {type:'Sphere'});
-    path = d3.geoPath().projection(proj);
-
-    // ── Zoom behavior ──
-    zoomBhv = d3.zoom()
-      .scaleExtent([1, 14])
-      .on('zoom', (event) => {
-        mapRoot.attr('transform', event.transform);
-      });
-    svg.call(zoomBhv);
-    svg.on('dblclick.zoom', null); // disable double-click zoom
-
-    // ── Tap detection (works reliably alongside D3 zoom) ──
-    svg.on('pointerdown.tap', (event) => {
-      pStart = {x: event.clientX, y: event.clientY, t: Date.now()};
+// ── Confetti ──────────────────────────
+function confetti(){
+  const cv=document.createElement('canvas');
+  cv.style.cssText='position:fixed;inset:0;z-index:999;pointer-events:none';
+  cv.width=innerWidth;cv.height=innerHeight;
+  document.body.appendChild(cv);
+  const ctx=cv.getContext('2d');
+  const cols=['#4ade80','#60a5fa','#f59e0b','#f87171','#a78bfa','#fbbf24','#2dd4bf'];
+  const ps=Array.from({length:110},()=>{
+    const a=Math.random()*Math.PI*2,s=Math.random()*13+5;
+    return{x:innerWidth/2,y:innerHeight*.42,vx:Math.cos(a)*s,vy:Math.sin(a)*s-7,
+      w:Math.random()*10+4,h:Math.random()*5+3,rot:Math.random()*6.28,rv:(Math.random()-.5)*.3,
+      c:cols[0|Math.random()*cols.length],g:.22};
+  });
+  const t0=Date.now(),dur=2000;
+  (function fr(){
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const t=Date.now()-t0,al=Math.max(0,1-t/dur*1.3);
+    ps.forEach(p=>{
+      p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.rot+=p.rv;
+      ctx.save();ctx.globalAlpha=al;ctx.translate(p.x,p.y);ctx.rotate(p.rot);
+      ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
     });
-    svg.on('pointerup.tap', (event) => {
-      if (!pStart) return;
-      const dx = event.clientX - pStart.x;
-      const dy = event.clientY - pStart.y;
-      const dt = Date.now() - pStart.t;
-      pStart = null;
-      // Treat as tap if barely moved and quick
-      if (Math.sqrt(dx*dx + dy*dy) < 10 && dt < 450) {
-        const el = document.elementFromPoint(event.clientX, event.clientY);
-        if (el && el.classList.contains('cpath')) {
-          const d = d3.select(el).datum();
-          if (d && clickCb) clickCb(String(d.id));
-        }
-      }
-    });
-    svg.on('pointercancel.tap', () => { pStart = null; });
+    t<dur?requestAnimationFrame(fr):cv.remove();
+  })();
+}
 
-    const topo = await d3.json(
-      'https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json'
-    );
-
-    // ── Build layers ──
-    const defs = svg.append('defs');
-    clipEl = defs.append('clipPath').attr('id','sclip')
-      .append('path').datum({type:'Sphere'}).attr('d', path);
-
-    // Outer group: clip is fixed (not zoomed)
-    const outerG = svg.append('g').attr('clip-path','url(#sclip)');
-
-    // Inner group: gets zoom transform
-    mapRoot = outerG.append('g');
-
-    mapRoot.append('path').datum({type:'Sphere'})
-      .attr('d', path).style('fill', OCEAN).attr('pointer-events','none');
-
-    mapRoot.append('path').datum(d3.geoGraticule()())
-      .attr('d', path).attr('fill','none')
-      .attr('stroke','rgba(255,255,255,.04)').attr('stroke-width','.5')
-      .attr('pointer-events','none');
-
-    const feats = topojson.feature(topo, topo.objects.countries).features
-      .filter(d => d.id !== 10);
-
-    cpaths = mapRoot.selectAll('.cpath').data(feats).enter()
-      .append('path').attr('class','cpath')
-      .attr('d', path).style('fill', UNSEEN)
-      .attr('stroke','rgba(255,255,255,.22)').attr('stroke-width','.5');
-
-    mapRoot.append('path')
-      .datum(topojson.mesh(topo, topo.objects.countries, (a,b) => a!==b))
-      .attr('d', path).attr('fill','none')
-      .attr('stroke','rgba(255,255,255,.1)').attr('stroke-width','.3')
-      .attr('pointer-events','none');
-
-    // Sphere ring: outside zoom group, always on top
-    sphereRing = svg.append('path').datum({type:'Sphere'})
-      .attr('d', path).attr('fill','none')
-      .attr('stroke','rgba(100,180,255,.35)').attr('stroke-width','1.2')
-      .attr('pointer-events','none');
-
-    // Resize observer
-    let t;
-    new ResizeObserver(() => { clearTimeout(t); t = setTimeout(resize, 160); })
-      .observe(wrap);
+// ── Map ───────────────────────────────
+const MAP=(()=>{
+  let svg,proj,gpath,cpaths,clip,ocean,grat,borders,ring;
+  let W,H;
+  function mg(){return[[10,8],[W-10,H-8]];}
+  async function init(wrap){
+    W=wrap.clientWidth;H=wrap.clientHeight;
+    svg=d3.select('#world-svg').attr('viewBox',`0 0 ${W} ${H}`);
+    proj=d3.geoNaturalEarth1().fitExtent(mg(),{type:'Sphere'});
+    gpath=d3.geoPath().projection(proj);
+    const topo=await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
+    const defs=svg.append('defs');
+    clip=defs.append('clipPath').attr('id','sc').append('path').datum({type:'Sphere'}).attr('d',gpath);
+    const g=svg.append('g').attr('clip-path','url(#sc)');
+    ocean=g.append('path').datum({type:'Sphere'}).attr('d',gpath).style('fill',OCEAN).attr('pointer-events','none');
+    grat=g.append('path').datum(d3.geoGraticule()()).attr('d',gpath).attr('fill','none').attr('stroke','rgba(255,255,255,.04)').attr('stroke-width','.4').attr('pointer-events','none');
+    const feats=topojson.feature(topo,topo.objects.countries).features.filter(d=>d.id!==10);
+    cpaths=g.selectAll('.cp').data(feats).enter().append('path').attr('class','cp').attr('d',gpath).style('fill',UNSEEN).attr('stroke','rgba(255,255,255,.18)').attr('stroke-width','.4');
+    borders=g.append('path').datum(topojson.mesh(topo,topo.objects.countries,(a,b)=>a!==b)).attr('d',gpath).attr('fill','none').attr('stroke','rgba(255,255,255,.08)').attr('stroke-width','.3').attr('pointer-events','none');
+    ring=svg.append('path').datum({type:'Sphere'}).attr('d',gpath).attr('fill','none').attr('stroke','rgba(100,180,255,.3)').attr('stroke-width','1').attr('pointer-events','none');
+    let t;new ResizeObserver(()=>{clearTimeout(t);t=setTimeout(resize,150);}).observe(wrap);
   }
-
-  function resize() {
-    const wrap = document.getElementById('map-wrap');
-    W = wrap.clientWidth; H = wrap.clientHeight;
-    svg.attr('viewBox', `0 0 ${W} ${H}`);
-    proj.fitExtent(margins(), {type:'Sphere'});
-    // Update all paths (in mapRoot)
-    mapRoot.selectAll('path').attr('d', path);
-    // Update clip and sphere ring (outside mapRoot)
-    clipEl.attr('d', path);
-    sphereRing.attr('d', path);
-    // Reset zoom on resize
-    svg.call(zoomBhv.transform, d3.zoomIdentity);
+  function resize(){
+    const w=document.getElementById('map-area');W=w.clientWidth;H=w.clientHeight;
+    svg.attr('viewBox',`0 0 ${W} ${H}`);
+    proj.fitExtent(mg(),{type:'Sphere'});
+    [clip,ocean,grat,borders,ring].forEach(el=>el&&el.attr('d',gpath));
+    cpaths&&cpaths.attr('d',gpath);
   }
-
-  function flashOk(id, finalColor) {
-    const p = cpaths && cpaths.filter(d => String(d.id) === id);
-    if (!p || p.empty()) return;
-    p.style('fill','#86efac');
-    setTimeout(() => p.transition().duration(550).style('fill', finalColor), 120);
+  function flashOk(id,col){
+    const p=cpaths&&cpaths.filter(d=>String(d.id)===id);
+    if(!p||p.empty())return;
+    p.style('fill','#fff');
+    setTimeout(()=>p.transition().duration(600).style('fill',col),100);
   }
-
-  function flashNg(id) {
-    const p = cpaths && cpaths.filter(d => String(d.id) === id);
-    if (!p || p.empty()) return;
-    p.style('fill','#ef4444');
-    setTimeout(() => p.transition().duration(480).style('fill', UNSEEN), 340);
-  }
-
-  function reset() {
-    cpaths && cpaths.interrupt().style('fill', UNSEEN);
-    svg && zoomBhv && svg.call(zoomBhv.transform, d3.zoomIdentity);
-  }
-
-  function zoomIn()  { svg.transition().duration(280).call(zoomBhv.scaleBy, 2); }
-  function zoomOut() { svg.transition().duration(280).call(zoomBhv.scaleBy, 0.5); }
-  function zoomReset(){ svg.transition().duration(400).call(zoomBhv.transform, d3.zoomIdentity); }
-
-  function onClick(fn) { clickCb = fn; }
-
-  return {init, flashOk, flashNg, reset, onClick, zoomIn, zoomOut, zoomReset};
+  function setCur(id){cpaths&&cpaths.classed('cur',d=>String(d.id)===id);}
+  function clearCur(){cpaths&&cpaths.classed('cur',false);}
+  function resetAll(){cpaths&&cpaths.interrupt().style('fill',UNSEEN).classed('cur',false);}
+  return{init,flashOk,setCur,clearCur,resetAll};
 })();
 
-// ════════════════════════════════════════
-// UI MODULE
-// ════════════════════════════════════════
-const UI = (() => {
-  const $ = id => document.getElementById(id);
-  const show = id => $(id).classList.remove('hide');
-  const hide = id => $(id).classList.add('hide');
+// ── Game State ────────────────────────
+let pname='',qs=[],idx=0,done=new Set(),wrongs=0,locked=false;
 
-  function showGame() {
-    $('game-header').style.display = 'flex';
-    $('qcard').style.display = 'block';
-    $('legend').style.display = 'flex';
-    $('zoom-ctrl').style.display = 'flex';
+function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
+
+function choices(q){return shuf([q,...shuf(COUNTRIES.filter(c=>c.id!==q.id)).slice(0,4)]);}
+
+function startGame(name){
+  pname=name;qs=shuf([...COUNTRIES]);idx=0;done.clear();wrongs=0;locked=false;
+  MAP.resetAll();
+  document.getElementById('h-name').textContent='👤 '+name;
+  updHdr();
+  document.getElementById('gw').style.display='flex';
+  showQ();
+}
+
+function showQ(){
+  locked=false;
+  const q=qs[idx];
+  document.getElementById('q-ctry').textContent=q.name;
+  setFb('','');
+  MAP.setCur(q.id);
+  const grid=document.getElementById('cards');
+  grid.innerHTML='';
+  choices(q).forEach(c=>{
+    const el=document.createElement('div');
+    el.className='card';
+    el.innerHTML=`<div class="ce">${c.emoji}</div><div class="ct">${c.capital}</div>`;
+    el.addEventListener('click',()=>onCard(c,el,q));
+    grid.appendChild(el);
+  });
+}
+
+function onCard(choice,el,q){
+  if(locked)return;
+  if(choice.id===q.id){
+    locked=true;
+    el.classList.add('ok');
+    MAP.clearCur();
+    MAP.flashOk(q.id,CC[q.cont]);
+    confetti();
+    setFb(`🎉 정답! ${q.name} → ${q.capital}`,'ok');
+    done.add(q.id);
+    updHdr();
+    setTimeout(()=>{
+      idx++;
+      idx>=qs.length?victory():showQ();
+    },1400);
+  }else{
+    wrongs++;
+    el.classList.add('ng');
+    setFb(`❌ 아쉬워요! 다시 찾아보세요 (${wrongs}/${MAX_WRONG})`,'ng');
+    updHdr();
+    setTimeout(()=>{
+      el.classList.remove('ng');
+      if(wrongs>=MAX_WRONG){locked=true;gameOver();}
+    },650);
   }
+}
 
-  function setCapital(txt) {
-    const el = $('cap-name');
-    el.classList.remove('pop'); void el.offsetWidth;
-    el.textContent = txt; el.classList.add('pop');
-  }
+function updHdr(){
+  document.getElementById('h-score').textContent=`정답 ${done.size} / ${COUNTRIES.length}`;
+  document.getElementById('h-wrong').textContent=`❌ ${wrongs} / ${MAX_WRONG}`;
+  document.getElementById('mprog').textContent=`${done.size} / ${COUNTRIES.length} ✅`;
+}
 
-  function feedback(txt, type) {
-    const el = $('fb-msg');
-    el.classList.remove('pop','ok','ng'); void el.offsetWidth;
-    el.textContent = txt; el.className = 'pop ' + type;
-  }
+function setFb(txt,cls){
+  const el=document.getElementById('q-fb');
+  el.textContent=txt;el.className=cls;
+}
 
-  function clearFb() { $('fb-msg').textContent=''; $('fb-msg').className=''; }
+function gameOver(){
+  MAP.clearCur();
+  document.getElementById('go-ttl').innerHTML=`📚 ${pname}님, 공부해볼까요?`;
+  document.getElementById('go-stat').textContent=`${wrongs}번 틀렸어요 · 맞힌 나라 ${done.size}개 / ${COUNTRIES.length}개`;
+  const list=document.getElementById('ans-list');list.innerHTML='';
+  [...COUNTRIES.filter(c=>done.has(c.id)),...COUNTRIES.filter(c=>!done.has(c.id))].forEach(c=>{
+    const ok=done.has(c.id);
+    const row=document.createElement('div');row.className='ar '+(ok?'ok':'ng');
+    row.innerHTML=`<span>${ok?'✅':'❌'}</span><span class="ar-nm">${c.emoji} ${c.name}</span><span class="ar-arr">→</span><span class="ar-cap">${c.capital}</span>`;
+    list.appendChild(row);
+  });
+  show('scr-go');
+}
 
-  function score(s, t) { $('score-disp').textContent = `${s} / ${t}`; }
+function victory(){
+  MAP.clearCur();
+  confetti();setTimeout(confetti,700);
+  document.getElementById('vic-ttl').textContent=`🎉 ${pname}님, 완벽해요!`;
+  document.getElementById('vic-msg').innerHTML=`모든 ${COUNTRIES.length}개 나라의 수도를 다 맞혔어요!<br>당신은 진정한 지리왕이에요! 🌍`;
+  document.getElementById('vic-stat').textContent=`정답 ${COUNTRIES.length}개 · 오답 ${wrongs}회`;
+  show('scr-vic');
+}
 
-  function lives(n) { $('lives-disp').textContent = `❤️ ${Math.max(0,n)}`; }
+function restart(){
+  hide('scr-go');hide('scr-vic');
+  document.getElementById('name-in').value=pname;
+  show('scr-name');
+}
 
-  function wrongs(n) { $('wrong-disp').textContent = `❌ ${n}`; }
+function show(id){document.getElementById(id).classList.remove('hide');}
+function hide(id){document.getElementById(id).classList.add('hide');}
 
-  function progress(i, t) {
-    $('prog-fill').style.width = (t ? Math.round(i/t*100) : 0) + '%';
-  }
-
-  function getRank(s, t) {
-    const p = s/t;
-    if(p===1)   return {title:'지리왕 👑',     stars:5, enc:'완벽합니다! 당신은 세계 최강의 지리왕이에요! 정말 놀라워요! 🏆'};
-    if(p>=0.85) return {title:'지리마스터 🌍', stars:4, enc:'훌륭해요! 거의 다 맞혔어요! 조금만 더 하면 지리왕이 될 수 있어요! 💪'};
-    if(p>=0.65) return {title:'탐험가 🧭',     stars:3, enc:'좋은 실력이에요! 세계를 향한 열정이 느껴져요. 계속 도전해봐요! 🌟'};
-    if(p>=0.42) return {title:'여행자 ✈️',     stars:2, enc:'더 공부해봐요! 세계를 알아가는 즐거움을 느껴보세요. 파이팅! 🚀'};
-    if(p>=0.21) return {title:'지도 초보 🗺️', stars:1, enc:'계속 도전하세요! 한 번에 완벽할 필요 없어요. 반복하면 느는 거예요! ⭐'};
-    return             {title:'지리 신입 📚',  stars:0, enc:'처음부터 다시 도전해봐요! 당신도 분명 잘 할 수 있어요! 화이팅! 🔥'};
-  }
-
-  function endScreen(s, t, wrongCnt, answered, questions) {
-    const r = getRank(s, t);
-    $('end-rank').textContent  = r.title;
-    $('end-stars').textContent = '⭐'.repeat(r.stars) + '☆'.repeat(5-r.stars);
-    $('end-score').textContent = `✅ 정답 ${s} / ${t}`;
-    $('end-wrong').textContent = `❌ 오답 ${wrongCnt}회`;
-    $('end-enc').textContent   = r.enc;
-
-    const list = $('end-list');
-    list.innerHTML = '';
-    [...questions.filter(q => answered.has(q.id)),
-     ...questions.filter(q => !answered.has(q.id))].forEach(q => {
-      const ok = answered.has(q.id);
-      const div = document.createElement('div');
-      div.className = 'cr ' + (ok ? 'ok' : 'ng');
-      div.innerHTML =
-        `<span>${ok ? '✅' : '❌'}</span>` +
-        `<span class="cr-name">${q.name}</span>` +
-        `<span class="cr-arr">→</span>` +
-        `<span class="cr-cap">${q.capital}</span>`;
-      list.appendChild(div);
-    });
-    show('scr-end');
-  }
-
-  return {show, hide, showGame, setCapital, feedback, clearFb, score, lives, wrongs, progress, endScreen};
-})();
-
-// ════════════════════════════════════════
-// GAME MODULE
-// ════════════════════════════════════════
-const GAME = (() => {
-  const MAX_LIVES = 10;
-  let qs=[], idx=0, sc=0, lv=MAX_LIVES, wrongCnt=0;
-  let answered=new Set(), locked=false, playing=false;
-
-  function shuffle(a) {
-    const b=[...a];
-    for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}
-    return b;
-  }
-
-  function start() {
-    qs=shuffle(COUNTRIES); idx=0; sc=0; lv=MAX_LIVES; wrongCnt=0;
-    answered=new Set(); locked=false; playing=true;
-
-    MAP.reset();
-    UI.hide('scr-start'); UI.hide('scr-end');
-    UI.showGame();
-    UI.score(0, qs.length);
-    UI.lives(MAX_LIVES);
-    UI.wrongs(0);
-    UI.progress(0, qs.length);
-    ask(qs[0]);
-  }
-
-  function ask(q) {
-    UI.setCapital(q.capital);
-    UI.clearFb();
-    locked = false;
-  }
-
-  function click(fid) {
-    if (locked || !playing) return;
-    locked = true;
-    const q = qs[idx];
-    fid === q.id ? correct(q) : wrong(fid);
-  }
-
-  function correct(q) {
-    sc++; answered.add(q.id);
-    MAP.flashOk(q.id, CONT_COLOR[q.cont]);
-    UI.feedback(`🎉 정답! ${q.name}`, 'ok');
-    UI.score(sc, qs.length);
-    UI.progress(idx+1, qs.length);
-    setTimeout(next, 1100);
-  }
-
-  function wrong(fid) {
-    lv--; wrongCnt++;
-    MAP.flashNg(fid);
-    UI.feedback('❌ 틀렸어요! 다시 찾아보세요', 'ng');
-    UI.lives(lv);
-    UI.wrongs(wrongCnt);
-    setTimeout(() => { lv<=0 ? end() : (locked=false); }, 950);
-  }
-
-  function next() {
-    idx++;
-    idx >= qs.length ? end() : ask(qs[idx]);
-  }
-
-  function end() {
-    playing = false;
-    UI.endScreen(sc, qs.length, wrongCnt, answered, qs);
-  }
-
-  return {start, click};
-})();
-
-// ════════════════════════════════════════
-// BOOT
-// ════════════════════════════════════════
-(async () => {
-  try {
-    await MAP.init(document.getElementById('map-wrap'));
-    MAP.onClick(id => GAME.click(id));
-    document.getElementById('scr-load').classList.add('hide');
-    UI.show('scr-start');
-  } catch(e) {
+// ── Boot ──────────────────────────────
+(async()=>{
+  try{
+    await MAP.init(document.getElementById('map-area'));
+    hide('scr-load');show('scr-name');
+  }catch(e){
     console.error(e);
-    document.getElementById('scr-load').innerHTML =
-      '<p style="color:#f87171;text-align:center;padding:24px;font-size:15px">' +
-      '지도를 불러올 수 없어요.<br>인터넷 연결을 확인해주세요.<br>' +
-      '<button onclick="location.reload()" style="margin-top:14px;padding:10px 22px;' +
-      'background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">' +
-      '다시 시도</button></p>';
+    document.getElementById('scr-load').innerHTML='<p style="color:#f87171;text-align:center;padding:24px;font-size:14px">지도를 불러올 수 없어요.<br>인터넷 연결을 확인해주세요.<br><button onclick="location.reload()" style="margin-top:12px;padding:10px 22px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">다시 시도</button></p>';
   }
-
-  document.getElementById('btn-start').addEventListener('click', () => GAME.start());
-  document.getElementById('btn-retry').addEventListener('click', () => { UI.hide('scr-end'); GAME.start(); });
-  document.getElementById('zbtn-in') .addEventListener('click', () => MAP.zoomIn());
-  document.getElementById('zbtn-out').addEventListener('click', () => MAP.zoomOut());
-  document.getElementById('zbtn-rst').addEventListener('click', () => MAP.zoomReset());
+  const ni=document.getElementById('name-in');
+  document.getElementById('btn-go').addEventListener('click',()=>{
+    const n=ni.value.trim()||'무명 탐험가';
+    hide('scr-name');startGame(n);
+  });
+  ni.addEventListener('keydown',e=>e.key==='Enter'&&document.getElementById('btn-go').click());
+  document.getElementById('btn-retry-go').addEventListener('click',restart);
+  document.getElementById('btn-retry-vic').addEventListener('click',restart);
 })();
 </script>
 </body>
