@@ -1,466 +1,697 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-gender="">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>포토 파이터</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        
-        :root {
-            --neon-blue: #00f0ff;
-            --neon-red: #ff0033;
-        }
-        
-        body {
-            font-family: 'Press Start 2P', system-ui;
-            background: linear-gradient(180deg, #0a0a2e, #1a0033);
-            color: white;
-            overflow: hidden;
-        }
-        
-        .arena {
-            position: relative;
-            width: 100%;
-            max-width: 900px;
-            height: 420px;
-            margin: 0 auto;
-            background: radial-gradient(circle at center, #1a0033 0%, #0a0a2e 100%);
-            border: 8px solid #00f0ff;
-            border-radius: 20px;
-            box-shadow: 
-                0 0 40px #00f0ff,
-                0 0 80px #ff0033,
-                inset 0 0 60px rgba(0, 240, 255, 0.3);
-            overflow: hidden;
-        }
-        
-        .fighter {
-            position: absolute;
-            bottom: 60px;
-            width: 220px;
-            height: 280px;
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-            z-index: 10;
-        }
-        
-        .fighter.left { left: 80px; }
-        .fighter.right { right: 80px; transform: scaleX(-1); }
-        
-        .fighter img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border: 6px solid #00f0ff;
-            border-radius: 15px;
-            box-shadow: 0 0 30px #00f0ff;
-            image-rendering: pixelated;
-        }
-        
-        .hp-bar {
-            position: absolute;
-            top: -35px;
-            width: 100%;
-            height: 18px;
-            background: #111;
-            border: 4px solid #00f0ff;
-            border-radius: 9999px;
-            overflow: hidden;
-        }
-        
-        .hp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00ff88, #00cc44);
-            transition: width 0.6s ease;
-            box-shadow: 0 0 15px #00ff88;
-        }
-        
-        .mp-bar {
-            position: absolute;
-            top: -15px;
-            width: 100%;
-            height: 12px;
-            background: #111;
-            border: 4px solid #00f0ff;
-            border-radius: 9999px;
-            overflow: hidden;
-        }
-        
-        .mp-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #00ccff, #0088ff);
-            transition: width 0.6s ease;
-            box-shadow: 0 0 15px #00ccff;
-        }
-        
-        .attack-effect {
-            position: absolute;
-            pointer-events: none;
-            animation: attackAnim 800ms ease forwards;
-            z-index: 30;
-        }
-        
-        @keyframes attackAnim {
-            0% { transform: scale(0.3) rotate(0deg); opacity: 1; }
-            70% { transform: scale(1.4) rotate(360deg); }
-            100% { transform: scale(0) rotate(720deg); opacity: 0; }
-        }
-        
-        .damage {
-            position: absolute;
-            color: #ff0033;
-            font-size: 42px;
-            font-weight: bold;
-            text-shadow: 0 0 20px #ff0033;
-            animation: damageFloat 1200ms ease forwards;
-            z-index: 40;
-            pointer-events: none;
-        }
-        
-        @keyframes damageFloat {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-120px); opacity: 0; }
-        }
-        
-        .shake {
-            animation: shake 400ms ease;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
-            20%, 40%, 60%, 80% { transform: translateX(8px); }
-        }
-        
-        .beam {
-            position: absolute;
-            height: 30px;
-            background: linear-gradient(90deg, transparent, #00f0ff, transparent);
-            box-shadow: 0 0 60px #00f0ff;
-            animation: beamFly 900ms linear forwards;
-        }
-        
-        .log {
-            font-size: 18px;
-            text-shadow: 0 0 10px #ff0033;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>아이 옷 사이즈 추천기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-50:  #fdf4ff;
+      --accent-100: #f3e8ff;
+      --accent-200: #e9d5ff;
+      --accent-500: #a855f7;
+      --accent-600: #9333ea;
+      --accent-bg:  #fdf4ff;
+    }
+    body[data-gender="boy"] {
+      --accent-50:  #eff6ff;
+      --accent-100: #dbeafe;
+      --accent-200: #bfdbfe;
+      --accent-500: #3b82f6;
+      --accent-600: #2563eb;
+      --accent-bg:  #eff6ff;
+    }
+    body[data-gender="girl"] {
+      --accent-50:  #fdf2f8;
+      --accent-100: #fce7f3;
+      --accent-200: #fbcfe8;
+      --accent-500: #ec4899;
+      --accent-600: #db2777;
+      --accent-bg:  #fdf2f8;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: var(--accent-bg, #f9fafb);
+      transition: background-color 0.3s ease;
+      min-height: 100vh;
+    }
+    .accent-btn {
+      background-color: var(--accent-500);
+      color: white;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .accent-btn:hover  { background-color: var(--accent-600); }
+    .accent-btn:active { transform: scale(0.98); }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-enter { animation: slideUp 0.4s ease forwards; opacity: 0; }
+    .card-enter:nth-child(1) { animation-delay:   0ms; }
+    .card-enter:nth-child(2) { animation-delay:  70ms; }
+    .card-enter:nth-child(3) { animation-delay: 140ms; }
+    .card-enter:nth-child(4) { animation-delay: 210ms; }
+    .card-enter:nth-child(5) { animation-delay: 280ms; }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+    .accordion-content.open { max-height: 520px; }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent-200, #e9d5ff); border-radius: 3px; }
+  </style>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { korean: ['Noto Sans KR', 'sans-serif'] } } } }</script>
 </head>
-<body class="min-h-screen flex flex-col">
-    <div class="text-center py-4 border-b border-[#00f0ff]">
-        <h1 class="text-5xl tracking-widest text-[#00f0ff] drop-shadow-[0_0_20px_#00f0ff]">📸 포토 파이터</h1>
-        <p class="text-[#ff0033] text-xl mt-1">사진으로 싸우는 궁극의 대결</p>
+<body class="pb-28">
+
+  <!-- Header -->
+  <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+    <div class="max-w-lg mx-auto px-4 py-3">
+      <h1 class="text-base font-bold" style="color: var(--accent-500);">&#128118; 아이 옷 사이즈 추천기</h1>
+      <p class="text-xs text-gray-400">0~9세 &middot; 질병관리청 성장도표 기준</p>
     </div>
+  </header>
 
-    <div class="flex-1 flex items-center justify-center p-6">
-        <div class="arena" id="arena">
-            
-            <!-- 왼쪽 파이터 (플레이어) -->
-            <div class="fighter left" id="player-container">
-                <div class="hp-bar"><div class="hp-fill" id="player-hp" style="width: 100%"></div></div>
-                <div class="mp-bar"><div class="mp-fill" id="player-mp" style="width: 100%"></div></div>
-                <img id="player-img" src="https://picsum.photos/id/1015/600/800" alt="플레이어" class="rounded-2xl">
-                <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-2xl font-bold text-white drop-shadow-lg" id="player-name">YOU</div>
-            </div>
+  <main class="max-w-lg mx-auto px-4 pt-5">
 
-            <!-- 오른쪽 파이터 (상대) -->
-            <div class="fighter right" id="opponent-container">
-                <div class="hp-bar"><div class="hp-fill" id="opponent-hp" style="width: 100%"></div></div>
-                <div class="mp-bar"><div class="mp-fill" id="opponent-mp" style="width: 100%"></div></div>
-                <img id="opponent-img" src="https://picsum.photos/id/201/600/800" alt="상대" class="rounded-2xl">
-                <div class="absolute -top-12 left-1/2 -translate-x-1/2 text-2xl font-bold text-white drop-shadow-lg" id="opponent-name">RIVAL</div>
-            </div>
+    <!-- INPUT SCREEN -->
+    <section id="screen-input">
 
-            <!-- 전투 로그 -->
-            <div id="battle-log" class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-md text-white text-center px-8 py-3 rounded-3xl max-w-md border-2 border-[#00f0ff] log"></div>
-
-            <!-- 중앙 공격 효과 레이어 -->
-            <div id="effect-layer" class="absolute inset-0 pointer-events-none"></div>
+      <!-- 성별 -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <h2 class="text-sm font-bold text-gray-700 mb-3">아이 성별 <span class="text-red-400">*</span></h2>
+        <div class="flex gap-3">
+          <button id="btn-boy"  onclick="selectGender('boy')"
+            class="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-400 text-sm transition-all duration-200">
+            &#128153; 남아
+          </button>
+          <button id="btn-girl" onclick="selectGender('girl')"
+            class="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-400 text-sm transition-all duration-200">
+            &#128151; 여아
+          </button>
         </div>
-    </div>
+        <p id="gender-error" class="text-red-400 text-xs mt-2 hidden">성별을 선택해주세요</p>
+      </div>
 
-    <!-- 컨트롤 패널 -->
-    <div class="bg-black/80 border-t-4 border-[#00f0ff] p-6">
-        <div class="max-w-3xl mx-auto flex flex-col md:flex-row gap-4">
-            
-            <!-- 능력치 표시 -->
-            <div class="flex-1 bg-[#1a0033] p-4 rounded-2xl border border-[#00f0ff]">
-                <div class="flex justify-between mb-3">
-                    <div>
-                        <span class="text-[#00f0ff]">플레이어</span><br>
-                        <span id="player-stats" class="text-sm">HP 120 / MP 85 / ATK 68 / DEF 52</span>
-                    </div>
-                    <div class="text-right">
-                        <span class="text-[#ff0033]">상대</span><br>
-                        <span id="opponent-stats" class="text-sm">HP 135 / MP 92 / ATK 75 / DEF 48</span>
-                    </div>
-                </div>
-            </div>
+      <!-- 기본 정보 -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <h2 class="text-sm font-bold text-gray-700 mb-3">기본 정보</h2>
 
-            <!-- 버튼들 -->
-            <div class="flex-1 flex gap-3 items-center justify-center">
-                <button onclick="startBattle()" 
-                        class="px-10 py-5 bg-gradient-to-r from-[#ff0033] to-[#00f0ff] hover:brightness-110 text-3xl font-bold rounded-3xl shadow-[0_0_30px_#ff0033] transition-all active:scale-95">
-                    ⚔️ 전투 시작
-                </button>
-                
-                <button onclick="resetBattle()" 
-                        class="px-8 py-5 bg-white/10 hover:bg-white/20 text-white text-xl rounded-3xl border-2 border-white/30">
-                    🔄 재시작
-                </button>
-            </div>
-
-            <!-- 사진 업로드 -->
-            <div class="flex-1 flex gap-2">
-                <div class="flex-1">
-                    <input type="file" id="player-upload" accept="image/*" class="hidden" onchange="loadPlayerPhoto(event)">
-                    <button onclick="document.getElementById('player-upload').click()" 
-                            class="w-full h-14 bg-[#00f0ff] text-black hover:bg-[#00ccff] font-bold rounded-2xl text-lg flex items-center justify-center gap-2">
-                        📸 내 사진 변경
-                    </button>
-                </div>
-                <div class="flex-1">
-                    <input type="file" id="opponent-upload" accept="image/*" class="hidden" onchange="loadOpponentPhoto(event)">
-                    <button onclick="document.getElementById('opponent-upload').click()" 
-                            class="w-full h-14 bg-[#ff0033] text-white hover:bg-[#cc0022] font-bold rounded-2xl text-lg flex items-center justify-center gap-2">
-                        📸 상대 사진 변경
-                    </button>
-                </div>
-            </div>
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">
+            생년월일 (양력) <span class="text-red-400">*</span>
+          </label>
+          <input type="date" id="input-birthday"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+            oninput="onBirthdayInput(this.value)">
+          <p id="age-display" class="text-xs text-gray-400 mt-1 min-h-[1rem]"></p>
+          <p id="birthday-error" class="text-red-400 text-xs mt-1 hidden">생년월일을 입력해주세요</p>
         </div>
-    </div>
 
-    <script>
-        // ====================== 게임 데이터 ======================
-        let player = {
-            hp: 120,
-            maxHp: 120,
-            mp: 85,
-            maxMp: 85,
-            atk: 68,
-            def: 52,
-            name: "YOU"
-        };
-        
-        let opponent = {
-            hp: 135,
-            maxHp: 135,
-            mp: 92,
-            maxMp: 92,
-            atk: 75,
-            def: 48,
-            name: "RIVAL"
-        };
-        
-        // 공격 리스트 (랜덤하게 사용)
-        const attacks = [
-            { name: "주먹 지르기", type: "punch", damageMod: 1.1, emoji: "👊", color: "#ff9900" },
-            { name: "발차기", type: "kick", damageMod: 1.3, emoji: "🦵", color: "#00ff88" },
-            { name: "박치기", type: "headbutt", damageMod: 1.4, emoji: "💥", color: "#ff0033" },
-            { name: "에너지파", type: "beam", damageMod: 1.6, emoji: "🌟", color: "#00f0ff" },
-            { name: "권총 쏘기", type: "gun", damageMod: 1.2, emoji: "🔫", color: "#ffff00" },
-            { name: "회전 킥", type: "spin", damageMod: 1.5, emoji: "🌀", color: "#ff00ff" },
-            { name: "필살기", type: "ultimate", damageMod: 2.0, emoji: "🔥", color: "#ff0033" },
-            { name: "슬랩", type: "slap", damageMod: 0.9, emoji: "✋", color: "#ffffff" }
-        ];
-        
-        // ====================== 사진 로드 ======================
-        function loadPlayerPhoto(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                document.getElementById('player-img').src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        function loadOpponentPhoto(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(ev) {
-                document.getElementById('opponent-img').src = ev.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        // ====================== 능력치 랜덤 부여 ======================
-        function randomizeStats() {
-            player.hp = player.maxHp = Math.floor(Math.random() * 40) + 110;
-            player.mp = player.maxMp = Math.floor(Math.random() * 30) + 70;
-            player.atk = Math.floor(Math.random() * 25) + 60;
-            player.def = Math.floor(Math.random() * 20) + 45;
-            
-            opponent.hp = opponent.maxHp = Math.floor(Math.random() * 50) + 120;
-            opponent.mp = opponent.maxMp = Math.floor(Math.random() * 40) + 80;
-            opponent.atk = Math.floor(Math.random() * 30) + 70;
-            opponent.def = Math.floor(Math.random() * 25) + 40;
-            
-            document.getElementById('player-stats').textContent = 
-                `HP ${player.hp} / MP ${player.mp} / ATK ${player.atk} / DEF ${player.def}`;
-            document.getElementById('opponent-stats').textContent = 
-                `HP ${opponent.hp} / MP ${opponent.mp} / ATK ${opponent.atk} / DEF ${opponent.def}`;
-        }
-        
-        // ====================== 애니메이션 효과 생성 ======================
-        function createAttackEffect(attackerSide, attack) {
-            const layer = document.getElementById('effect-layer');
-            const isPlayer = attackerSide === 'left';
-            
-            if (attack.type === 'beam') {
-                // 에너지파 빔
-                const beam = document.createElement('div');
-                beam.className = 'beam';
-                beam.style.top = '180px';
-                beam.style.left = isPlayer ? '280px' : '420px';
-                beam.style.width = isPlayer ? '380px' : '380px';
-                beam.style.transform = isPlayer ? 'rotate(0deg)' : 'rotate(180deg)';
-                layer.appendChild(beam);
-                
-                setTimeout(() => beam.remove(), 1200);
-                
-                // 상대 흔들기
-                const target = isPlayer ? document.getElementById('opponent-container') : document.getElementById('player-container');
-                target.classList.add('shake');
-                setTimeout(() => target.classList.remove('shake'), 600);
-            } 
-            else {
-                // 일반 공격 이펙트 (이모지 + 폭발)
-                const effect = document.createElement('div');
-                effect.className = 'attack-effect text-7xl';
-                effect.style.left = isPlayer ? '340px' : '460px';
-                effect.style.top = '160px';
-                effect.textContent = attack.emoji;
-                effect.style.color = attack.color;
-                layer.appendChild(effect);
-                
-                // 데미지 숫자
-                const damageEl = document.createElement('div');
-                damageEl.className = 'damage';
-                damageEl.style.left = isPlayer ? '520px' : '280px';
-                damageEl.style.top = '140px';
-                damageEl.textContent = Math.floor(Math.random() * 25) + 18;
-                layer.appendChild(damageEl);
-                
-                setTimeout(() => {
-                    effect.remove();
-                    damageEl.remove();
-                }, 1400);
-            }
-            
-            // 로그에 공격 표시
-            const log = document.getElementById('battle-log');
-            log.innerHTML = `<span class="text-[#00f0ff]">${isPlayer ? player.name : opponent.name}</span> → <span class="text-[#ff0033]">${attack.name}!</span>`;
-            setTimeout(() => { if (log.innerHTML.includes(attack.name)) log.innerHTML = ''; }, 2200);
-        }
-        
-        // ====================== 전투 시뮬레이션 (실시간 애니메이션) ======================
-        async function startBattle() {
-            // 능력치 초기화
-            randomizeStats();
-            
-            // HP/MP 바 초기화
-            document.getElementById('player-hp').style.width = '100%';
-            document.getElementById('player-mp').style.width = '100%';
-            document.getElementById('opponent-hp').style.width = '100%';
-            document.getElementById('opponent-mp').style.width = '100%';
-            
-            let pHp = player.hp;
-            let oHp = opponent.hp;
-            
-            document.getElementById('battle-log').innerHTML = '⚔️ 전투 시작!';
-            
-            // 6~9턴 정도의 전투
-            const turns = Math.floor(Math.random() * 4) + 6;
-            
-            for (let i = 0; i < turns; i++) {
-                if (pHp <= 0 || oHp <= 0) break;
-                
-                // 누가 먼저 공격할지 (50% 확률 + 운)
-                const playerTurn = Math.random() > 0.5;
-                
-                const attacker = playerTurn ? player : opponent;
-                const defender = playerTurn ? opponent : player;
-                const attack = attacks[Math.floor(Math.random() * attacks.length)];
-                
-                // 공격력 계산
-                let damage = Math.floor(attacker.atk * attack.damageMod * (0.8 + Math.random() * 0.6));
-                damage = Math.max(8, Math.floor(damage - defender.def * 0.4));
-                
-                // HP 감소
-                if (playerTurn) {
-                    oHp = Math.max(0, oHp - damage);
-                    document.getElementById('opponent-hp').style.width = `${(oHp / opponent.maxHp) * 100}%`;
-                    createAttackEffect('left', attack);
-                } else {
-                    pHp = Math.max(0, pHp - damage);
-                    document.getElementById('player-hp').style.width = `${(pHp / player.maxHp) * 100}%`;
-                    createAttackEffect('right', attack);
-                }
-                
-                // MP 약간 소모
-                if (playerTurn) {
-                    player.mp = Math.max(0, player.mp - 8);
-                    document.getElementById('player-mp').style.width = `${(player.mp / player.maxMp) * 100}%`;
-                } else {
-                    opponent.mp = Math.max(0, opponent.mp - 8);
-                    document.getElementById('opponent-mp').style.width = `${(opponent.mp / opponent.maxMp) * 100}%`;
-                }
-                
-                // 애니메이션 딜레이 (실시간 느낌)
-                await new Promise(resolve => setTimeout(resolve, 1100));
-            }
-            
-            // 승자 판정
-            const playerWin = pHp > oHp;
-            
-            document.getElementById('battle-log').innerHTML = playerWin 
-                ? `<span class="text-[#00f0ff] text-3xl">🎉 YOU WIN!!</span>` 
-                : `<span class="text-[#ff0033] text-3xl">💥 YOU LOSE...</span>`;
-            
-            // 승리 폭죽 효과
-            if (playerWin) {
-                for (let i = 0; i < 12; i++) {
-                    setTimeout(() => {
-                        const confetti = document.createElement('div');
-                        confetti.textContent = ['🔥','⭐','💥','⚡'][Math.floor(Math.random()*4)];
-                        confetti.style.position = 'absolute';
-                        confetti.style.left = Math.random() * 100 + '%';
-                        confetti.style.top = '-50px';
-                        confetti.style.fontSize = '30px';
-                        confetti.style.zIndex = 999;
-                        document.getElementById('arena').appendChild(confetti);
-                        
-                        let y = -50;
-                        const fall = setInterval(() => {
-                            y += 12 + Math.random() * 8;
-                            confetti.style.top = y + 'px';
-                            if (y > 500) {
-                                clearInterval(fall);
-                                confetti.remove();
-                            }
-                        }, 30);
-                    }, i * 40);
-                }
-            }
-            
-            // 끝난 후 다시 시작 가능
-            console.log('%c✅ 전투 애니메이션 완전 구현됨!', 'color:#00f0ff; font-size:18px');
-        }
-        
-        function resetBattle() {
-            location.reload();
-        }
-        
-        // ====================== 초기화 ======================
-        window.onload = function() {
-            randomizeStats();
-            console.log('%c📸 포토 파이터 전투 애니메이션 세부 구현 완료!', 'background:#00f0ff;color:#0a0a2e;padding:2px 8px;border-radius:4px;font-size:16px');
-            console.log('→ 사진 업로드 후 "전투 시작" 버튼 누르면 실시간 애니메이션 전투 시작');
-            console.log('→ 주먹, 발차기, 에너지파, 권총 등 8종류의 개별 애니메이션 적용됨');
-        };
-    </script>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">키 <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input type="number" id="input-height" placeholder="예: 95.5"
+                min="40" max="160" step="0.1"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+            </div>
+            <p id="height-error" class="text-red-400 text-xs mt-1 hidden">키를 정확히 입력해주세요</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">몸무게 <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input type="number" id="input-weight" placeholder="예: 15.0"
+                min="2" max="60" step="0.1"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">kg</span>
+            </div>
+            <p id="weight-error" class="text-red-400 text-xs mt-1 hidden">몸무게를 정확히 입력해주세요</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 추가 신체 정보 (아코디언) -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-6">
+        <button onclick="toggleAccordion()" class="w-full flex items-center justify-between text-left">
+          <div>
+            <span class="text-sm font-bold text-gray-700">추가 신체 정보</span>
+            <span class="ml-2 text-xs text-gray-400 font-normal">(선택)</span>
+          </div>
+          <span id="accordion-icon" class="text-gray-400 text-xs transition-transform duration-300">&#9660;</span>
+        </button>
+        <p class="text-xs text-gray-400 mt-0.5">입력할수록 더 정확한 사이즈를 추천드려요</p>
+
+        <div id="accordion-content" class="accordion-content">
+          <div class="pt-4 grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">머리 둘레</label>
+              <div class="relative">
+                <input type="number" id="input-head" placeholder="예: 48.0"
+                  min="30" max="62" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">가슴 둘레</label>
+              <div class="relative">
+                <input type="number" id="input-chest" placeholder="예: 54.0"
+                  min="30" max="90" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">허리 둘레</label>
+              <div class="relative">
+                <input type="number" id="input-waist" placeholder="예: 50.0"
+                  min="30" max="80" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">발 길이</label>
+              <div class="relative">
+                <input type="number" id="input-foot" placeholder="예: 15.5"
+                  min="6" max="26" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="handleSubmit()"
+        class="accent-btn w-full py-4 rounded-2xl font-bold text-base shadow-lg">
+        사이즈 추천 받기 &#8594;
+      </button>
+    </section>
+
+    <!-- RESULTS SCREEN -->
+    <section id="screen-result" class="hidden">
+
+      <button onclick="goBack()"
+        class="flex items-center gap-1 text-sm text-gray-500 mb-4 hover:text-gray-700 transition-colors">
+        &#8592; 다시 입력하기
+      </button>
+
+      <div id="result-hero" class="rounded-2xl p-5 mb-4" style="background: var(--accent-100);"></div>
+      <div id="result-growth" class="bg-white rounded-2xl shadow-sm p-4 mb-4"></div>
+
+      <h3 class="text-sm font-bold text-gray-700 mb-3">사이즈 추천</h3>
+      <div id="result-sizes" class="space-y-3 mb-6"></div>
+
+      <div class="bg-gray-50 rounded-2xl p-4 text-xs text-gray-400 space-y-1.5 mb-4">
+        <p>&#128203; <strong>데이터 출처</strong>: 질병관리청(KDCA) 2017 소아청소년 성장도표 (현행 공식 기준)</p>
+        <p>&#127991; 브랜드별 사이즈는 시즌·제품에 따라 다를 수 있으니 구매 전 직접 확인을 권장합니다</p>
+        <p>&#128208; 아이의 체형에 따라 같은 키라도 맞는 사이즈가 다를 수 있습니다</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+  // ================================================================
+  //  데이터 상수
+  // ================================================================
+
+  const GROWTH_DATA = {
+    boy: [
+      [0,   49.9,  3.3,  34.0],
+      [3,   61.4,  6.1,  41.0],
+      [6,   67.6,  7.9,  43.0],
+      [9,   72.3,  9.2,  44.5],
+      [12,  75.8, 10.2,  46.0],
+      [18,  82.3, 11.5,  47.0],
+      [24,  87.6, 12.7,  48.0],
+      [36,  96.5, 14.9,  49.0],
+      [48, 103.3, 17.0,  50.0],
+      [60, 109.6, 19.2,  51.0],
+      [72, 115.7, 21.7,  52.0],
+      [84, 121.4, 24.3,  53.0],
+      [96, 127.2, 27.6,  53.5],
+      [108,133.0, 31.0,  54.0],
+    ],
+    girl: [
+      [0,   49.1,  3.2,  33.5],
+      [3,   60.0,  5.5,  40.0],
+      [6,   65.7,  7.2,  42.5],
+      [9,   70.3,  8.6,  44.0],
+      [12,  74.0,  9.5,  45.5],
+      [18,  80.7, 10.9,  46.5],
+      [24,  86.4, 12.1,  47.5],
+      [36,  95.4, 14.5,  48.5],
+      [48, 102.4, 16.6,  49.5],
+      [60, 108.7, 18.7,  50.5],
+      [72, 114.7, 21.2,  51.5],
+      [84, 120.5, 23.8,  52.5],
+      [96, 126.5, 27.1,  53.0],
+      [108,132.4, 30.5,  53.5],
+    ]
+  };
+
+  // 상의/하의 — [최대키cm, 사이즈, 연령힌트, prevMax]
+  const TOP_SIZES = [
+    [55,  'NB',  '0~1개월',   0  ],
+    [65,  '60',  '1~3개월',   55 ],
+    [75,  '70',  '3~6개월',   65 ],
+    [85,  '80',  '6~12개월',  75 ],
+    [95,  '90',  '1~2세',     85 ],
+    [105, '100', '2~3세',     95 ],
+    [115, '110', '3~5세',     105],
+    [125, '120', '5~7세',     115],
+    [135, '130', '7~8세',     125],
+    [999, '140', '8~9세',     135],
+  ];
+
+  // 신발 — [최대발길이mm, 사이즈(mm), 연령힌트]
+  const SHOE_SIZES = [
+    [95,  '90',  '0~3개월' ],
+    [105, '100', '3~6개월' ],
+    [115, '110', '6~9개월' ],
+    [125, '120', '9~12개월'],
+    [135, '130', '1~2세'   ],
+    [145, '140', '2~3세'   ],
+    [155, '150', '3~4세'   ],
+    [165, '160', '4~6세'   ],
+    [175, '170', '6~7세'   ],
+    [999, '180', '7~9세'   ],
+  ];
+
+  // 양말 — [최소cm, 최대cm, 사이즈, 연령힌트]
+  const SOCK_SIZES = [
+    [0,  11, '소 (S)',    '6개월 미만'],
+    [11, 13, '중 (M)',    '6~12개월'  ],
+    [13, 15, '대 (L)',    '1~3세'     ],
+    [15, 99, '특대 (XL)', '4세 이상'  ],
+  ];
+
+  // 모자 — [최소cm, 최대cm, 사이즈, 연령힌트]
+  const HAT_SIZES = [
+    [0,  40, '38호', '0~3개월' ],
+    [40, 44, '42호', '3~6개월' ],
+    [44, 46, '44호', '6~12개월'],
+    [46, 48, '46호', '1~2세'   ],
+    [48, 50, '50호', '2~4세'   ],
+    [50, 52, '52호', '4~6세'   ],
+    [52, 54, '54호', '6~8세'   ],
+    [54, 99, '56호', '8~9세'   ],
+  ];
+
+  // 브랜드별 의류 사이즈 (한국 표준 → 각 브랜드)
+  const BRAND_TOP = {
+    'NB':  { hm: '50/56',    nike: 'NB~3M',    adidas: '56/62',    zara: '1~3M',   gap: 'NB~3M'   },
+    '60':  { hm: '62/68',    nike: '3~6M',     adidas: '68',       zara: '6M',     gap: '3~6M'    },
+    '70':  { hm: '74/80',    nike: '6~12M',    adidas: '74/80',    zara: '9~12M',  gap: '6~12M'   },
+    '80':  { hm: '86',       nike: '12~18M',   adidas: '86',       zara: '12~18M', gap: '12~18M'  },
+    '90':  { hm: '92/98',    nike: '2T~3T',    adidas: '92/98',    zara: '2Y',     gap: '2T/3T'   },
+    '100': { hm: '104',      nike: '3T~4T',    adidas: '104',      zara: '3~4Y',   gap: '4T/XS'   },
+    '110': { hm: '110/116',  nike: '5/6 (LK)', adidas: '110/116',  zara: '4~5Y',   gap: 'XS'      },
+    '120': { hm: '122/128',  nike: 'XS',       adidas: '122/128',  zara: '6~7Y',   gap: 'S'       },
+    '130': { hm: '128/134',  nike: 'XS/S',     adidas: '134',      zara: '8Y',     gap: 'M (8)'   },
+    '140': { hm: '140',      nike: 'S/M',      adidas: '140',      zara: '9Y',     gap: 'L (10)'  },
+  };
+
+  // 브랜드별 신발 사이즈
+  const BRAND_SHOE = {
+    '90':  { nike: '1C',      adidas: 'EU 16',   zara: '0~3M',   gap: '0~3M'   },
+    '100': { nike: '2C',      adidas: 'EU 17',   zara: '3~6M',   gap: '3~6M'   },
+    '110': { nike: '3C',      adidas: 'EU 18',   zara: '6~9M',   gap: '6~9M'   },
+    '120': { nike: '4C',      adidas: 'EU 19',   zara: '9~12M',  gap: '9~12M'  },
+    '130': { nike: '5C',      adidas: 'EU 20',   zara: '12~18M', gap: '12~18M' },
+    '140': { nike: '6C',      adidas: 'EU 21.5', zara: '18~24M', gap: '18~24M' },
+    '150': { nike: '7C',      adidas: 'EU 23',   zara: '2~3Y',   gap: '2~3Y'   },
+    '160': { nike: '9C',      adidas: 'EU 24.5', zara: '3~4Y',   gap: '3~4Y'   },
+    '170': { nike: '10C',     adidas: 'EU 26',   zara: '5~6Y',   gap: '5~6Y'   },
+    '180': { nike: '11~12C',  adidas: 'EU 27.5', zara: '6~7Y',   gap: '6~7Y'   },
+  };
+
+  // ================================================================
+  //  앱 상태
+  // ================================================================
+  let appState = {
+    gender: null,
+    birthdayStr: '',
+    heightCm: null,
+    weightKg: null,
+    extra: { headCm: null, chestCm: null, waistCm: null, footCm: null }
+  };
+
+  // ================================================================
+  //  핵심 함수
+  // ================================================================
+
+  function calculateAge(birthdayStr) {
+    const birth = new Date(birthdayStr);
+    const now   = new Date();
+    let years  = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth()    - birth.getMonth();
+    if (months < 0) { years--; months += 12; }
+    return { years, months, totalMonths: years * 12 + months };
+  }
+
+  function interpolateGrowth(totalMonths, gender) {
+    const data    = GROWTH_DATA[gender];
+    const clamped = Math.max(0, Math.min(108, totalMonths));
+    let lo = data[0], hi = data[data.length - 1];
+    for (let i = 0; i < data.length - 1; i++) {
+      if (data[i][0] <= clamped && clamped <= data[i + 1][0]) {
+        lo = data[i]; hi = data[i + 1]; break;
+      }
+    }
+    const t = lo[0] === hi[0] ? 0 : (clamped - lo[0]) / (hi[0] - lo[0]);
+    return {
+      avgHeight: +(lo[1] + t * (hi[1] - lo[1])).toFixed(1),
+      avgWeight: +(lo[2] + t * (hi[2] - lo[2])).toFixed(1),
+      avgHead:   +(lo[3] + t * (hi[3] - lo[3])).toFixed(1),
+    };
+  }
+
+  function estimateBodyMeasurements(heightCm, totalMonths) {
+    const footRatio = totalMonths < 12 ? 0.155 : 0.165;
+    return {
+      footCm:  +(heightCm * footRatio).toFixed(1),
+      chestCm: +(heightCm * (0.50 + totalMonths * 0.0002)).toFixed(1),
+      waistCm: +(heightCm * 0.47).toFixed(1),
+    };
+  }
+
+  function findIndex(chart, value) {
+    for (let i = 0; i < chart.length; i++) {
+      if (value <= chart[i][0]) return i;
+    }
+    return chart.length - 1;
+  }
+
+  function topFitNote(heightCm, idx) {
+    const entry = TOP_SIZES[idx];
+    const prev  = entry[3];
+    const max   = entry[0] === 999 ? prev + 10 : entry[0];
+    const pos   = (heightCm - prev) / (max - prev);
+    if (pos < 0.30) return { label: '조금 클 수 있어요', color: 'amber' };
+    if (pos < 0.75) return { label: '딱 맞아요',        color: 'green' };
+    return               { label: '곧 다음 사이즈',    color: 'blue'  };
+  }
+
+  function getClothingSizes(m) {
+    const topIdx  = findIndex(TOP_SIZES,  m.heightCm);
+    const shoeIdx = findIndex(SHOE_SIZES, m.footCm * 10);
+
+    const topEntry  = TOP_SIZES[topIdx];
+    const shoeEntry = SHOE_SIZES[shoeIdx];
+    const nextTop   = TOP_SIZES[ Math.min(topIdx  + 1, TOP_SIZES.length  - 1)];
+    const nextShoe  = SHOE_SIZES[Math.min(shoeIdx + 1, SHOE_SIZES.length - 1)];
+
+    const sockEntry = SOCK_SIZES.find(([lo, hi]) => m.footCm >= lo && m.footCm < hi)
+                   || SOCK_SIZES[SOCK_SIZES.length - 1];
+    const hatEntry  = HAT_SIZES.find(([lo, hi]) => m.headCm >= lo && m.headCm < hi)
+                   || HAT_SIZES[HAT_SIZES.length - 1];
+
+    return {
+      hat:    { size: hatEntry[2],  hint: hatEntry[3] },
+      top:    { size: topEntry[1],  hint: topEntry[2],  fit: topFitNote(m.heightCm, topIdx), nextSize: nextTop[1]  },
+      bottom: { size: topEntry[1],  hint: topEntry[2],  fit: topFitNote(m.heightCm, topIdx), nextSize: nextTop[1]  },
+      socks:  { size: sockEntry[2], hint: sockEntry[3] },
+      shoes:  { size: shoeEntry[1], hint: shoeEntry[2], nextSize: nextShoe[1] },
+    };
+  }
+
+  function percentileLabel(actual, avg) {
+    const r = actual / avg;
+    if (r < 0.90) return { label: '또래보다 작아요',       bg: 'bg-blue-50',   text: 'text-blue-600',   icon: '&#128201;' };
+    if (r < 0.97) return { label: '평균보다 약간 작아요',  bg: 'bg-sky-50',    text: 'text-sky-600',    icon: '&#128316;' };
+    if (r < 1.03) return { label: '또래 평균이에요',       bg: 'bg-green-50',  text: 'text-green-600',  icon: '&#9989;'   };
+    if (r < 1.10) return { label: '평균보다 약간 커요',    bg: 'bg-orange-50', text: 'text-orange-600', icon: '&#128317;' };
+    return               { label: '또래보다 커요',          bg: 'bg-red-50',    text: 'text-red-500',    icon: '&#128200;' };
+  }
+
+  // ================================================================
+  //  이벤트 핸들러
+  // ================================================================
+
+  function selectGender(gender) {
+    appState.gender = gender;
+    document.body.dataset.gender = gender;
+    const bBoy  = document.getElementById('btn-boy');
+    const bGirl = document.getElementById('btn-girl');
+    const reset  = 'background:white; border-color:#e5e7eb; color:#9ca3af;';
+    const active = 'background:var(--accent-100); border-color:var(--accent-500); color:var(--accent-600);';
+    bBoy.style.cssText  = gender === 'boy'  ? active : reset;
+    bGirl.style.cssText = gender === 'girl' ? active : reset;
+    document.getElementById('gender-error').classList.add('hidden');
+  }
+
+  function onBirthdayInput(val) {
+    const el = document.getElementById('age-display');
+    if (!val) { el.textContent = ''; return; }
+    if (new Date(val) > new Date()) { el.textContent = '&#9888;&#65039; 생년월일이 오늘 이후입니다'; return; }
+    const age = calculateAge(val);
+    if (age.totalMonths > 108) {
+      el.textContent = `생후 ${age.totalMonths}개월 (만 ${age.years}세) — 9세 이하만 지원합니다`;
+    } else if (age.totalMonths === 0) {
+      el.textContent = '생후 1개월 미만 (신생아)';
+    } else {
+      el.textContent = `생후 ${age.totalMonths}개월 (만 ${age.years}세 ${age.months > 0 ? age.months + '개월' : ''})`;
+    }
+  }
+
+  function toggleAccordion() {
+    const c = document.getElementById('accordion-content');
+    const i = document.getElementById('accordion-icon');
+    c.classList.toggle('open');
+    i.style.transform = c.classList.contains('open') ? 'rotate(180deg)' : '';
+  }
+
+  function showErr(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.remove('hidden'); }
+  function hideErr(id)       { document.getElementById(id).classList.add('hidden'); }
+
+  function handleSubmit() {
+    let ok = true;
+
+    if (!appState.gender) { document.getElementById('gender-error').classList.remove('hidden'); ok = false; }
+    else hideErr('gender-error');
+
+    const bday = document.getElementById('input-birthday').value;
+    if (!bday) { showErr('birthday-error', '생년월일을 입력해주세요'); ok = false; }
+    else if (new Date(bday) > new Date()) { showErr('birthday-error', '생년월일이 오늘 이후입니다'); ok = false; }
+    else hideErr('birthday-error');
+
+    const h = parseFloat(document.getElementById('input-height').value);
+    if (!h || h < 40 || h > 160) { showErr('height-error', '키를 정확히 입력해주세요 (40~160cm)'); ok = false; }
+    else hideErr('height-error');
+
+    const w = parseFloat(document.getElementById('input-weight').value);
+    if (!w || w < 2 || w > 60) { showErr('weight-error', '몸무게를 정확히 입력해주세요 (2~60kg)'); ok = false; }
+    else hideErr('weight-error');
+
+    if (!ok) return;
+
+    appState.birthdayStr = bday;
+    appState.heightCm    = h;
+    appState.weightKg    = w;
+    appState.extra = {
+      headCm:  parseFloat(document.getElementById('input-head').value)  || null,
+      chestCm: parseFloat(document.getElementById('input-chest').value) || null,
+      waistCm: parseFloat(document.getElementById('input-waist').value) || null,
+      footCm:  parseFloat(document.getElementById('input-foot').value)  || null,
+    };
+
+    const age    = calculateAge(bday);
+    const growth = interpolateGrowth(age.totalMonths, appState.gender);
+    const est    = estimateBodyMeasurements(h, age.totalMonths);
+
+    const m = {
+      heightCm: h,
+      weightKg: w,
+      headCm:   appState.extra.headCm  || growth.avgHead,
+      footCm:   appState.extra.footCm  || est.footCm,
+      chestCm:  appState.extra.chestCm || est.chestCm,
+      waistCm:  appState.extra.waistCm || est.waistCm,
+      estHead:  !appState.extra.headCm,
+      estFoot:  !appState.extra.footCm,
+    };
+
+    const sizes = getClothingSizes(m);
+    const percH = percentileLabel(h, growth.avgHeight);
+    const percW = percentileLabel(w, growth.avgWeight);
+
+    renderResults({ age, growth, sizes, m, percH, percW });
+
+    document.getElementById('screen-input').classList.add('hidden');
+    document.getElementById('screen-result').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goBack() {
+    document.getElementById('screen-result').classList.add('hidden');
+    document.getElementById('screen-input').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ================================================================
+  //  렌더 함수
+  // ================================================================
+
+  function renderResults({ age, growth, sizes, m, percH, percW }) {
+    const gLabel   = appState.gender === 'boy' ? '남아 &#128153;' : '여아 &#128151;';
+    const ageLabel = age.totalMonths === 0
+      ? '신생아'
+      : age.totalMonths < 24
+        ? `생후 ${age.totalMonths}개월`
+        : `만 ${age.years}세 ${age.months > 0 ? age.months + '개월' : ''}`;
+
+    document.getElementById('result-hero').innerHTML = `
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-sm font-bold mb-0.5" style="color:var(--accent-600);">${gLabel}</div>
+          <div class="text-xs text-gray-500">${ageLabel}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-bold leading-none" style="color:var(--accent-600);">${m.heightCm}<span class="text-base font-normal ml-0.5">cm</span></div>
+          <div class="text-sm text-gray-500 mt-0.5">${m.weightKg} kg</div>
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t text-xs text-gray-500" style="border-color:var(--accent-200);">
+        또래 평균: 키 ${growth.avgHeight}cm &middot; 몸무게 ${growth.avgWeight}kg
+      </div>
+    `;
+
+    document.getElementById('result-growth').innerHTML = `
+      <h3 class="text-sm font-bold text-gray-700 mb-3">또래 비교 (KDCA 2017 기준)</h3>
+      <div class="space-y-2.5">
+        ${growthRow('&#128207;', '키',      m.heightCm, 'cm', growth.avgHeight, percH)}
+        ${growthRow('&#9878;&#65039;',  '몸무게', m.weightKg, 'kg', growth.avgWeight, percW)}
+      </div>
+    `;
+
+    const cats = [
+      { icon:'&#129346;', name:'모자',  s: sizes.hat,
+        meas: `머리둘레 ${m.headCm.toFixed(1)}cm${m.estHead ? ' (추정)' : ''}`,
+        brandTop: null, brandShoe: null },
+      { icon:'&#128085;', name:'상의',  s: sizes.top,
+        meas: `키 ${m.heightCm}cm 기준`,
+        brandTop: BRAND_TOP[sizes.top.size], brandShoe: null },
+      { icon:'&#128086;', name:'하의',  s: sizes.bottom,
+        meas: `키 ${m.heightCm}cm 기준`,
+        brandTop: BRAND_TOP[sizes.bottom.size], brandShoe: null },
+      { icon:'&#129510;', name:'양말',  s: sizes.socks,
+        meas: `발길이 ${m.footCm.toFixed(1)}cm${m.estFoot ? ' (추정)' : ''}`,
+        brandTop: null, brandShoe: null },
+      { icon:'&#128095;', name:'신발',  s: sizes.shoes,
+        meas: `발길이 ${m.footCm.toFixed(1)}cm${m.estFoot ? ' (추정)' : ''}`,
+        brandTop: null, brandShoe: BRAND_SHOE[sizes.shoes.size] },
+    ];
+
+    document.getElementById('result-sizes').innerHTML = cats.map(renderSizeCard).join('');
+  }
+
+  function growthRow(icon, label, actual, unit, avg, perc) {
+    return `
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5">
+          <span>${icon}</span>
+          <span class="text-sm text-gray-600">${label}</span>
+          <span class="text-xs text-gray-400">${actual}${unit}</span>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${perc.bg} ${perc.text} whitespace-nowrap">
+          ${perc.icon} ${perc.label}
+        </span>
+      </div>`;
+  }
+
+  function renderSizeCard({ icon, name, s, meas, brandTop, brandShoe }) {
+    const fitClr = { green: 'bg-green-50 text-green-600', amber: 'bg-amber-50 text-amber-600', blue: 'bg-blue-50 text-blue-600' };
+    const fitBadge = s.fit
+      ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${fitClr[s.fit.color]}">${s.fit.label}</span>`
+      : '';
+    const nextBadge = s.nextSize
+      ? `<p class="mt-2 text-xs text-amber-600">&#128230; 한 치수 크게 구매 시: <strong>${s.nextSize}${name === '신발' ? 'mm' : ''}</strong></p>`
+      : '';
+    const displaySize = name === '신발' ? `${s.size}mm` : s.size;
+
+    let brandSec = '';
+    if (brandTop) {
+      brandSec = mkBrandBlock([
+        { n: 'H&M',           v: brandTop.hm     },
+        { n: '나이키',         v: brandTop.nike   },
+        { n: '아디다스',       v: brandTop.adidas },
+        { n: '자라',           v: brandTop.zara   },
+        { n: '갭',             v: brandTop.gap    },
+        { n: '유니클로·뉴발란스', v: '한국 표준과 동일' },
+      ]);
+    } else if (brandShoe) {
+      brandSec = mkBrandBlock([
+        { n: '나이키 (US)',    v: brandShoe.nike   },
+        { n: '아디다스 (EU)',  v: brandShoe.adidas },
+        { n: '자라',           v: brandShoe.zara   },
+        { n: '갭',             v: brandShoe.gap    },
+        { n: '유니클로·뉴발란스', v: '한국 mm 동일' },
+      ]);
+    }
+
+    return `
+      <div class="card-enter bg-white rounded-2xl shadow-sm p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">${icon}</span>
+            <span class="text-sm font-bold text-gray-700">${name}</span>
+          </div>
+          ${fitBadge}
+        </div>
+        <div class="flex items-baseline gap-2 mb-0.5">
+          <span class="text-3xl font-bold" style="color:var(--accent-500);">${displaySize}</span>
+          <span class="text-sm text-gray-500">${s.hint}</span>
+        </div>
+        <p class="text-xs text-gray-400">${meas}</p>
+        ${nextBadge}
+        ${brandSec}
+      </div>`;
+  }
+
+  function mkBrandBlock(items) {
+    const tags = items.map(it =>
+      `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 rounded-lg text-xs text-gray-600 border border-gray-100">
+         <strong class="text-gray-700">${it.n}</strong><span class="text-gray-300 mx-0.5">|</span>${it.v}
+       </span>`
+    ).join('');
+    return `
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <p class="text-xs font-medium text-gray-500 mb-2">브랜드별 사이즈</p>
+        <div class="flex flex-wrap gap-1.5">${tags}</div>
+      </div>`;
+  }
+
+  // ================================================================
+  //  초기화
+  // ================================================================
+  window.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const minD  = new Date();
+    minD.setFullYear(minD.getFullYear() - 9);
+    const bday = document.getElementById('input-birthday');
+    bday.max = today;
+    bday.min = minD.toISOString().split('T')[0];
+
+    document.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('focus', () => { inp.style.borderColor = 'var(--accent-500)'; });
+      inp.addEventListener('blur',  () => { inp.style.borderColor = '#e5e7eb'; });
+    });
+  });
+  </script>
 </body>
 </html>
