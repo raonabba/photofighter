@@ -1,428 +1,697 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" data-gender="">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>세계 수도 퀴즈 🌍</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
-<script src="https://d3js.org/d3.v7.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
-<style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-body{display:flex;flex-direction:column;height:100dvh;overflow:hidden;background:#0a1628;font-family:'Noto Sans KR',sans-serif;color:#fff;user-select:none;-webkit-user-select:none}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>아이 옷 사이즈 추천기</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-50:  #fdf4ff;
+      --accent-100: #f3e8ff;
+      --accent-200: #e9d5ff;
+      --accent-500: #a855f7;
+      --accent-600: #9333ea;
+      --accent-bg:  #fdf4ff;
+    }
+    body[data-gender="boy"] {
+      --accent-50:  #eff6ff;
+      --accent-100: #dbeafe;
+      --accent-200: #bfdbfe;
+      --accent-500: #3b82f6;
+      --accent-600: #2563eb;
+      --accent-bg:  #eff6ff;
+    }
+    body[data-gender="girl"] {
+      --accent-50:  #fdf2f8;
+      --accent-100: #fce7f3;
+      --accent-200: #fbcfe8;
+      --accent-500: #ec4899;
+      --accent-600: #db2777;
+      --accent-bg:  #fdf2f8;
+    }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: var(--accent-bg, #f9fafb);
+      transition: background-color 0.3s ease;
+      min-height: 100vh;
+    }
+    .accent-btn {
+      background-color: var(--accent-500);
+      color: white;
+      transition: background-color 0.2s ease, transform 0.1s ease;
+    }
+    .accent-btn:hover  { background-color: var(--accent-600); }
+    .accent-btn:active { transform: scale(0.98); }
 
-/* ── Overlays ── */
-.ov{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:80;transition:opacity .3s}
-.ov.hide{opacity:0;pointer-events:none}
-#scr-load{background:#0a1628;z-index:100;gap:16px}
-.spin{width:42px;height:42px;border:4px solid rgba(255,255,255,.1);border-top-color:#60a5fa;border-radius:50%;animation:spin .8s linear infinite}
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-enter { animation: slideUp 0.4s ease forwards; opacity: 0; }
+    .card-enter:nth-child(1) { animation-delay:   0ms; }
+    .card-enter:nth-child(2) { animation-delay:  70ms; }
+    .card-enter:nth-child(3) { animation-delay: 140ms; }
+    .card-enter:nth-child(4) { animation-delay: 210ms; }
+    .card-enter:nth-child(5) { animation-delay: 280ms; }
 
-/* Name screen */
-#scr-name{background:radial-gradient(ellipse at 50% 40%,#1a3a5c,#0a1628 70%);gap:14px;padding:28px 24px;text-align:center;z-index:90}
-.globe{font-size:64px;animation:float 3s ease-in-out infinite;line-height:1}
-.big-title{font-size:28px;font-weight:900;background:linear-gradient(135deg,#60a5fa,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.name-in{width:100%;max-width:280px;padding:13px 18px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.15);border-radius:14px;font-size:18px;font-weight:700;font-family:'Noto Sans KR',sans-serif;color:#fff;text-align:center;outline:none;transition:border-color .2s}
-.name-in:focus{border-color:#60a5fa}
-.name-in::placeholder{color:rgba(255,255,255,.3);font-weight:400}
-.hint-rules{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);border-radius:12px;padding:11px 16px;font-size:13px;color:rgba(255,255,255,.6);line-height:1.85;text-align:left;max-width:290px;width:100%}
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+    }
+    .accordion-content.open { max-height: 520px; }
 
-/* Game Over */
-#scr-go{background:rgba(8,16,30,.98);z-index:85;flex-direction:column;overflow:hidden;justify-content:flex-start;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
-.go-top{flex-shrink:0;padding:20px 20px 14px;text-align:center;border-bottom:1px solid rgba(255,255,255,.07)}
-#go-ttl{font-size:22px;font-weight:900;margin-bottom:5px}
-#go-stat{font-size:13px;color:rgba(255,255,255,.6)}
-.sec-hdr{flex-shrink:0;padding:9px 16px 3px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);letter-spacing:1.2px;text-transform:uppercase}
-#ans-list{flex:1;overflow-y:auto;padding:0 10px 8px;-webkit-overflow-scrolling:touch}
-.ar{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:8px;margin-bottom:3px;font-size:13px}
-.ar.ok{background:rgba(74,222,128,.07)}
-.ar.ng{background:rgba(248,113,113,.07)}
-.ar-nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ar.ok .ar-nm{color:#86efac}
-.ar.ng .ar-nm{color:#fca5a5}
-.ar-arr{color:rgba(255,255,255,.25)}
-.ar-cap{flex-shrink:0;font-size:12px;color:rgba(255,255,255,.8);min-width:80px;text-align:right}
-.bot-foot{flex-shrink:0;padding:10px 20px 18px;text-align:center;border-top:1px solid rgba(255,255,255,.07)}
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    input[type="number"] { -moz-appearance: textfield; }
 
-/* Victory */
-#scr-vic{background:radial-gradient(ellipse at 50% 40%,#1a3a28,#0a1628 70%);z-index:85;gap:14px;padding:32px 24px;text-align:center}
-#vic-ico{font-size:68px;animation:float 2s ease-in-out infinite;line-height:1}
-#vic-ttl{font-size:26px;font-weight:900;background:linear-gradient(135deg,#4ade80,#60a5fa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-#vic-msg{font-size:14px;color:rgba(255,255,255,.7);line-height:1.6;max-width:270px}
-#vic-stat{font-size:15px;font-weight:700;color:#fbbf24}
-
-/* Button */
-.btn{background:linear-gradient(135deg,#3b82f6,#8b5cf6);color:#fff;border:none;border-radius:50px;padding:12px 34px;font-size:17px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;box-shadow:0 4px 20px rgba(59,130,246,.4);transition:transform .12s,box-shadow .12s}
-.btn:active{transform:scale(.95)}
-
-/* ── Game Layout ── */
-#gw{display:none;flex-direction:column;height:100dvh}
-#ghdr{flex-shrink:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;background:rgba(10,22,40,.97);border-bottom:1px solid rgba(255,255,255,.08);gap:6px}
-#h-name{font-size:13px;font-weight:700;color:#93c5fd;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-#h-score{font-size:12px;font-weight:700;color:#4ade80}
-#h-wrong{font-size:12px;font-weight:700;color:#f87171}
-
-#map-area{flex:1;position:relative;overflow:hidden;min-height:0}
-#world-svg{width:100%;height:100%;display:block}
-.cp{pointer-events:none;transition:fill .4s}
-.cp.cur{stroke:#fbbf24!important;stroke-width:2px!important;animation:pulse 1.2s ease-in-out infinite}
-#mleg{position:absolute;top:6px;left:6px;display:flex;flex-direction:column;gap:2px;background:rgba(8,18,34,.82);border-radius:7px;padding:5px 8px;pointer-events:none}
-.li{display:flex;align-items:center;gap:4px;font-size:9px;color:rgba(255,255,255,.6)}
-.ld{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-#mprog{position:absolute;top:6px;right:6px;background:rgba(8,18,34,.82);border-radius:7px;padding:4px 7px;font-size:10px;font-weight:700;color:#4ade80;pointer-events:none}
-
-/* Quiz area */
-#quiz{flex-shrink:0;background:rgba(8,18,34,.99);border-top:1px solid rgba(255,255,255,.07)}
-#question{padding:8px 16px 4px;text-align:center}
-#q-ctry{font-size:20px;font-weight:900;color:#60a5fa}
-.q-suf{font-size:16px;color:rgba(255,255,255,.8)}
-.q-sub{font-size:10px;color:rgba(255,255,255,.35);margin-top:1px}
-#q-fb{height:17px;text-align:center;font-size:11px;font-weight:700;margin:2px 0}
-#q-fb.ok{color:#4ade80}
-#q-fb.ng{color:#f87171}
-#cards{display:flex;flex-wrap:wrap;gap:7px;padding:5px 10px max(12px,env(safe-area-inset-bottom));justify-content:center}
-.card{width:calc(50% - 4px);background:linear-gradient(145deg,rgba(18,32,58,.95),rgba(10,20,40,.95));border:2px solid rgba(255,255,255,.1);border-radius:13px;padding:10px 6px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;transition:transform .1s,border-color .15s,background .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.card:active{transform:scale(.93)}
-.card.ok{border-color:#4ade80!important;background:linear-gradient(145deg,rgba(74,222,128,.2),rgba(34,197,94,.08))!important;pointer-events:none;animation:cok .35s ease-out}
-.card.ng{border-color:#ef4444!important;background:linear-gradient(145deg,rgba(239,68,68,.2),rgba(220,38,38,.08))!important;animation:shake .3s ease-out}
-.ce{font-size:28px;line-height:1.1}
-.ct{font-size:12px;font-weight:700;text-align:center;line-height:1.3;color:rgba(255,255,255,.9)}
-
-/* Keyframes */
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
-@keyframes pulse{0%,100%{filter:drop-shadow(0 0 3px #fbbf24)}50%{filter:drop-shadow(0 0 8px #fbbf24);opacity:.7}}
-@keyframes cok{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
-</style>
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: #f3f4f6; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb { background: var(--accent-200, #e9d5ff); border-radius: 3px; }
+  </style>
+  <script>tailwind.config = { theme: { extend: { fontFamily: { korean: ['Noto Sans KR', 'sans-serif'] } } } }</script>
 </head>
-<body>
+<body class="pb-28">
 
-<div class="ov" id="scr-load"><div class="spin"></div><p style="font-size:14px;color:rgba(255,255,255,.4)">세계지도 불러오는 중…</p></div>
-
-<div class="ov hide" id="scr-name">
-  <div class="globe">🌍</div>
-  <h1 class="big-title">세계 수도 퀴즈</h1>
-  <input class="name-in" id="name-in" type="text" placeholder="이름을 입력하세요" maxlength="12" autocomplete="off">
-  <div class="hint-rules">
-    🎯 나라 이름을 보고 수도를 맞춰요<br>
-    🃏 5개 카드 중 정답을 선택하세요<br>
-    ❤️ 틀리는 건 10번까지 허용돼요<br>
-    🌍 71개 나라 수도를 모두 완파하세요!
-  </div>
-  <button class="btn" id="btn-go">게임 시작 🚀</button>
-</div>
-
-<div class="ov hide" id="scr-go">
-  <div class="go-top"><div id="go-ttl"></div><div id="go-stat"></div></div>
-  <div class="sec-hdr">나라 ↔ 수도 정답표</div>
-  <div id="ans-list"></div>
-  <div class="bot-foot"><button class="btn" id="btn-retry-go">다시 도전 🚀</button></div>
-</div>
-
-<div class="ov hide" id="scr-vic">
-  <div id="vic-ico">🏆</div>
-  <div id="vic-ttl"></div>
-  <div id="vic-msg"></div>
-  <div id="vic-stat"></div>
-  <button class="btn" id="btn-retry-vic">다시 도전 🚀</button>
-</div>
-
-<div id="gw">
-  <header id="ghdr">
-    <span id="h-name">플레이어</span>
-    <span id="h-score">정답 0 / 71</span>
-    <span id="h-wrong">❌ 0 / 10</span>
+  <!-- Header -->
+  <header class="sticky top-0 z-20 bg-white/90 backdrop-blur-sm border-b border-gray-100">
+    <div class="max-w-lg mx-auto px-4 py-3">
+      <h1 class="text-base font-bold" style="color: var(--accent-500);">&#128118; 아이 옷 사이즈 추천기</h1>
+      <p class="text-xs text-gray-400">0~9세 &middot; 질병관리청 성장도표 기준</p>
+    </div>
   </header>
-  <div id="map-area">
-    <svg id="world-svg"></svg>
-    <div id="mleg">
-      <div class="li"><div class="ld" style="background:#4ade80"></div>아메리카</div>
-      <div class="li"><div class="ld" style="background:#a78bfa"></div>유럽</div>
-      <div class="li"><div class="ld" style="background:#fb923c"></div>아시아</div>
-      <div class="li"><div class="ld" style="background:#fbbf24"></div>아프리카</div>
-      <div class="li"><div class="ld" style="background:#2dd4bf"></div>오세아니아</div>
-    </div>
-    <div id="mprog">0 / 71 ✅</div>
-  </div>
-  <div id="quiz">
-    <div id="question">
-      <div><span id="q-ctry">—</span><span class="q-suf">의 수도는?</span></div>
-      <div class="q-sub">아래 카드에서 수도를 찾아보세요 🃏</div>
-    </div>
-    <div id="q-fb"></div>
-    <div id="cards"></div>
-  </div>
-</div>
 
-<script>
-const OCEAN='#1a3a5c', UNSEEN='#2d3a4a';
-const CC={americas:'#4ade80',europe:'#a78bfa',asia:'#fb923c',africa:'#fbbf24',oceania:'#2dd4bf'};
-const MAX_WRONG=10;
+  <main class="max-w-lg mx-auto px-4 pt-5">
 
-const COUNTRIES=[
-  {id:'840',name:'미국',capital:'워싱턴 D.C.',emoji:'🦅',cont:'americas'},
-  {id:'124',name:'캐나다',capital:'오타와',emoji:'🍁',cont:'americas'},
-  {id:'484',name:'멕시코',capital:'멕시코시티',emoji:'🌮',cont:'americas'},
-  {id:'076',name:'브라질',capital:'브라질리아',emoji:'🌴',cont:'americas'},
-  {id:'032',name:'아르헨티나',capital:'부에노스아이레스',emoji:'💃',cont:'americas'},
-  {id:'152',name:'칠레',capital:'산티아고',emoji:'🏔️',cont:'americas'},
-  {id:'170',name:'콜롬비아',capital:'보고타',emoji:'☕',cont:'americas'},
-  {id:'604',name:'페루',capital:'리마',emoji:'🦙',cont:'americas'},
-  {id:'862',name:'베네수엘라',capital:'카라카스',emoji:'🌊',cont:'americas'},
-  {id:'858',name:'우루과이',capital:'몬테비데오',emoji:'🐄',cont:'americas'},
-  {id:'192',name:'쿠바',capital:'아바나',emoji:'🎷',cont:'americas'},
-  {id:'218',name:'에콰도르',capital:'키토',emoji:'🌋',cont:'americas'},
-  {id:'600',name:'파라과이',capital:'아순시온',emoji:'🌿',cont:'americas'},
-  {id:'068',name:'볼리비아',capital:'수크레',emoji:'⛏️',cont:'americas'},
-  {id:'276',name:'독일',capital:'베를린',emoji:'🐻',cont:'europe'},
-  {id:'250',name:'프랑스',capital:'파리',emoji:'🗼',cont:'europe'},
-  {id:'826',name:'영국',capital:'런던',emoji:'🎡',cont:'europe'},
-  {id:'380',name:'이탈리아',capital:'로마',emoji:'🏛️',cont:'europe'},
-  {id:'724',name:'스페인',capital:'마드리드',emoji:'🐂',cont:'europe'},
-  {id:'528',name:'네덜란드',capital:'암스테르담',emoji:'🌷',cont:'europe'},
-  {id:'620',name:'포르투갈',capital:'리스본',emoji:'🐓',cont:'europe'},
-  {id:'756',name:'스위스',capital:'베른',emoji:'🍫',cont:'europe'},
-  {id:'040',name:'오스트리아',capital:'빈',emoji:'🎻',cont:'europe'},
-  {id:'752',name:'스웨덴',capital:'스톡홀름',emoji:'⚓',cont:'europe'},
-  {id:'578',name:'노르웨이',capital:'오슬로',emoji:'🎿',cont:'europe'},
-  {id:'208',name:'덴마크',capital:'코펜하겐',emoji:'🧜',cont:'europe'},
-  {id:'246',name:'핀란드',capital:'헬싱키',emoji:'🧊',cont:'europe'},
-  {id:'616',name:'폴란드',capital:'바르샤바',emoji:'🦅',cont:'europe'},
-  {id:'642',name:'루마니아',capital:'부쿠레슈티',emoji:'🧛',cont:'europe'},
-  {id:'300',name:'그리스',capital:'아테네',emoji:'⚗️',cont:'europe'},
-  {id:'804',name:'우크라이나',capital:'키이우',emoji:'🌻',cont:'europe'},
-  {id:'643',name:'러시아',capital:'모스크바',emoji:'🧅',cont:'europe'},
-  {id:'156',name:'중국',capital:'베이징',emoji:'🐉',cont:'asia'},
-  {id:'392',name:'일본',capital:'도쿄',emoji:'⛩️',cont:'asia'},
-  {id:'410',name:'대한민국',capital:'서울',emoji:'🏯',cont:'asia'},
-  {id:'356',name:'인도',capital:'뉴델리',emoji:'🐘',cont:'asia'},
-  {id:'586',name:'파키스탄',capital:'이슬라마바드',emoji:'🌙',cont:'asia'},
-  {id:'764',name:'태국',capital:'방콕',emoji:'🛕',cont:'asia'},
-  {id:'704',name:'베트남',capital:'하노이',emoji:'🍜',cont:'asia'},
-  {id:'360',name:'인도네시아',capital:'자카르타',emoji:'🎭',cont:'asia'},
-  {id:'458',name:'말레이시아',capital:'쿠알라룸푸르',emoji:'🏙️',cont:'asia'},
-  {id:'608',name:'필리핀',capital:'마닐라',emoji:'🌺',cont:'asia'},
-  {id:'104',name:'미얀마',capital:'네피도',emoji:'🦚',cont:'asia'},
-  {id:'116',name:'캄보디아',capital:'프놈펜',emoji:'🌸',cont:'asia'},
-  {id:'400',name:'요르단',capital:'암만',emoji:'🌵',cont:'asia'},
-  {id:'368',name:'이라크',capital:'바그다드',emoji:'🏺',cont:'asia'},
-  {id:'364',name:'이란',capital:'테헤란',emoji:'🌹',cont:'asia'},
-  {id:'682',name:'사우디아라비아',capital:'리야드',emoji:'🕌',cont:'asia'},
-  {id:'792',name:'튀르키예',capital:'앙카라',emoji:'🌙',cont:'asia'},
-  {id:'784',name:'아랍에미리트',capital:'아부다비',emoji:'🌇',cont:'asia'},
-  {id:'496',name:'몽골',capital:'울란바토르',emoji:'⛺',cont:'asia'},
-  {id:'398',name:'카자흐스탄',capital:'아스타나',emoji:'🌐',cont:'asia'},
-  {id:'004',name:'아프가니스탄',capital:'카불',emoji:'❄️',cont:'asia'},
-  {id:'524',name:'네팔',capital:'카트만두',emoji:'🙏',cont:'asia'},
-  {id:'818',name:'이집트',capital:'카이로',emoji:'🔺',cont:'africa'},
-  {id:'504',name:'모로코',capital:'라바트',emoji:'🌴',cont:'africa'},
-  {id:'012',name:'알제리',capital:'알제',emoji:'🌅',cont:'africa'},
-  {id:'706',name:'소말리아',capital:'모가디슈',emoji:'⛵',cont:'africa'},
-  {id:'231',name:'에티오피아',capital:'아디스아바바',emoji:'🦓',cont:'africa'},
-  {id:'404',name:'케냐',capital:'나이로비',emoji:'🦁',cont:'africa'},
-  {id:'834',name:'탄자니아',capital:'도도마',emoji:'🦒',cont:'africa'},
-  {id:'710',name:'남아프리카공화국',capital:'프리토리아',emoji:'💎',cont:'africa'},
-  {id:'566',name:'나이지리아',capital:'아부자',emoji:'🛢️',cont:'africa'},
-  {id:'288',name:'가나',capital:'아크라',emoji:'🌍',cont:'africa'},
-  {id:'434',name:'리비아',capital:'트리폴리',emoji:'🏜️',cont:'africa'},
-  {id:'716',name:'짐바브웨',capital:'하라레',emoji:'🌿',cont:'africa'},
-  {id:'024',name:'앙골라',capital:'루안다',emoji:'🌊',cont:'africa'},
-  {id:'894',name:'잠비아',capital:'루사카',emoji:'💧',cont:'africa'},
-  {id:'036',name:'호주',capital:'캔버라',emoji:'🦘',cont:'oceania'},
-  {id:'554',name:'뉴질랜드',capital:'웰링턴',emoji:'🐑',cont:'oceania'},
-  {id:'598',name:'파푸아뉴기니',capital:'포트모르즈비',emoji:'🦜',cont:'oceania'},
-];
+    <!-- INPUT SCREEN -->
+    <section id="screen-input">
 
-// ── Confetti ──────────────────────────
-function confetti(){
-  const cv=document.createElement('canvas');
-  cv.style.cssText='position:fixed;inset:0;z-index:999;pointer-events:none';
-  cv.width=innerWidth;cv.height=innerHeight;
-  document.body.appendChild(cv);
-  const ctx=cv.getContext('2d');
-  const cols=['#4ade80','#60a5fa','#f59e0b','#f87171','#a78bfa','#fbbf24','#2dd4bf'];
-  const ps=Array.from({length:110},()=>{
-    const a=Math.random()*Math.PI*2,s=Math.random()*13+5;
-    return{x:innerWidth/2,y:innerHeight*.42,vx:Math.cos(a)*s,vy:Math.sin(a)*s-7,
-      w:Math.random()*10+4,h:Math.random()*5+3,rot:Math.random()*6.28,rv:(Math.random()-.5)*.3,
-      c:cols[0|Math.random()*cols.length],g:.22};
-  });
-  const t0=Date.now(),dur=2000;
-  (function fr(){
-    ctx.clearRect(0,0,cv.width,cv.height);
-    const t=Date.now()-t0,al=Math.max(0,1-t/dur*1.3);
-    ps.forEach(p=>{
-      p.x+=p.vx;p.y+=p.vy;p.vy+=p.g;p.rot+=p.rv;
-      ctx.save();ctx.globalAlpha=al;ctx.translate(p.x,p.y);ctx.rotate(p.rot);
-      ctx.fillStyle=p.c;ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h);ctx.restore();
+      <!-- 성별 -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <h2 class="text-sm font-bold text-gray-700 mb-3">아이 성별 <span class="text-red-400">*</span></h2>
+        <div class="flex gap-3">
+          <button id="btn-boy"  onclick="selectGender('boy')"
+            class="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-400 text-sm transition-all duration-200">
+            &#128153; 남아
+          </button>
+          <button id="btn-girl" onclick="selectGender('girl')"
+            class="flex-1 py-3 rounded-xl border-2 border-gray-200 font-bold text-gray-400 text-sm transition-all duration-200">
+            &#128151; 여아
+          </button>
+        </div>
+        <p id="gender-error" class="text-red-400 text-xs mt-2 hidden">성별을 선택해주세요</p>
+      </div>
+
+      <!-- 기본 정보 -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-4">
+        <h2 class="text-sm font-bold text-gray-700 mb-3">기본 정보</h2>
+
+        <div class="mb-4">
+          <label class="block text-xs font-medium text-gray-600 mb-1">
+            생년월일 (양력) <span class="text-red-400">*</span>
+          </label>
+          <input type="date" id="input-birthday"
+            class="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none transition-colors"
+            oninput="onBirthdayInput(this.value)">
+          <p id="age-display" class="text-xs text-gray-400 mt-1 min-h-[1rem]"></p>
+          <p id="birthday-error" class="text-red-400 text-xs mt-1 hidden">생년월일을 입력해주세요</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">키 <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input type="number" id="input-height" placeholder="예: 95.5"
+                min="40" max="160" step="0.1"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+            </div>
+            <p id="height-error" class="text-red-400 text-xs mt-1 hidden">키를 정확히 입력해주세요</p>
+          </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-600 mb-1">몸무게 <span class="text-red-400">*</span></label>
+            <div class="relative">
+              <input type="number" id="input-weight" placeholder="예: 15.0"
+                min="2" max="60" step="0.1"
+                class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">kg</span>
+            </div>
+            <p id="weight-error" class="text-red-400 text-xs mt-1 hidden">몸무게를 정확히 입력해주세요</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 추가 신체 정보 (아코디언) -->
+      <div class="bg-white rounded-2xl shadow-sm p-4 mb-6">
+        <button onclick="toggleAccordion()" class="w-full flex items-center justify-between text-left">
+          <div>
+            <span class="text-sm font-bold text-gray-700">추가 신체 정보</span>
+            <span class="ml-2 text-xs text-gray-400 font-normal">(선택)</span>
+          </div>
+          <span id="accordion-icon" class="text-gray-400 text-xs transition-transform duration-300">&#9660;</span>
+        </button>
+        <p class="text-xs text-gray-400 mt-0.5">입력할수록 더 정확한 사이즈를 추천드려요</p>
+
+        <div id="accordion-content" class="accordion-content">
+          <div class="pt-4 grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">머리 둘레</label>
+              <div class="relative">
+                <input type="number" id="input-head" placeholder="예: 48.0"
+                  min="30" max="62" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">가슴 둘레</label>
+              <div class="relative">
+                <input type="number" id="input-chest" placeholder="예: 54.0"
+                  min="30" max="90" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">허리 둘레</label>
+              <div class="relative">
+                <input type="number" id="input-waist" placeholder="예: 50.0"
+                  min="30" max="80" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-medium text-gray-600 mb-1">발 길이</label>
+              <div class="relative">
+                <input type="number" id="input-foot" placeholder="예: 15.5"
+                  min="6" max="26" step="0.1"
+                  class="w-full border border-gray-200 rounded-xl px-3 py-2.5 pr-9 text-sm focus:outline-none transition-colors">
+                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">cm</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="handleSubmit()"
+        class="accent-btn w-full py-4 rounded-2xl font-bold text-base shadow-lg">
+        사이즈 추천 받기 &#8594;
+      </button>
+    </section>
+
+    <!-- RESULTS SCREEN -->
+    <section id="screen-result" class="hidden">
+
+      <button onclick="goBack()"
+        class="flex items-center gap-1 text-sm text-gray-500 mb-4 hover:text-gray-700 transition-colors">
+        &#8592; 다시 입력하기
+      </button>
+
+      <div id="result-hero" class="rounded-2xl p-5 mb-4" style="background: var(--accent-100);"></div>
+      <div id="result-growth" class="bg-white rounded-2xl shadow-sm p-4 mb-4"></div>
+
+      <h3 class="text-sm font-bold text-gray-700 mb-3">사이즈 추천</h3>
+      <div id="result-sizes" class="space-y-3 mb-6"></div>
+
+      <div class="bg-gray-50 rounded-2xl p-4 text-xs text-gray-400 space-y-1.5 mb-4">
+        <p>&#128203; <strong>데이터 출처</strong>: 질병관리청(KDCA) 2017 소아청소년 성장도표 (현행 공식 기준)</p>
+        <p>&#127991; 브랜드별 사이즈는 시즌·제품에 따라 다를 수 있으니 구매 전 직접 확인을 권장합니다</p>
+        <p>&#128208; 아이의 체형에 따라 같은 키라도 맞는 사이즈가 다를 수 있습니다</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+  // ================================================================
+  //  데이터 상수
+  // ================================================================
+
+  const GROWTH_DATA = {
+    boy: [
+      [0,   49.9,  3.3,  34.0],
+      [3,   61.4,  6.1,  41.0],
+      [6,   67.6,  7.9,  43.0],
+      [9,   72.3,  9.2,  44.5],
+      [12,  75.8, 10.2,  46.0],
+      [18,  82.3, 11.5,  47.0],
+      [24,  87.6, 12.7,  48.0],
+      [36,  96.5, 14.9,  49.0],
+      [48, 103.3, 17.0,  50.0],
+      [60, 109.6, 19.2,  51.0],
+      [72, 115.7, 21.7,  52.0],
+      [84, 121.4, 24.3,  53.0],
+      [96, 127.2, 27.6,  53.5],
+      [108,133.0, 31.0,  54.0],
+    ],
+    girl: [
+      [0,   49.1,  3.2,  33.5],
+      [3,   60.0,  5.5,  40.0],
+      [6,   65.7,  7.2,  42.5],
+      [9,   70.3,  8.6,  44.0],
+      [12,  74.0,  9.5,  45.5],
+      [18,  80.7, 10.9,  46.5],
+      [24,  86.4, 12.1,  47.5],
+      [36,  95.4, 14.5,  48.5],
+      [48, 102.4, 16.6,  49.5],
+      [60, 108.7, 18.7,  50.5],
+      [72, 114.7, 21.2,  51.5],
+      [84, 120.5, 23.8,  52.5],
+      [96, 126.5, 27.1,  53.0],
+      [108,132.4, 30.5,  53.5],
+    ]
+  };
+
+  // 상의/하의 — [최대키cm, 사이즈, 연령힌트, prevMax]
+  const TOP_SIZES = [
+    [55,  'NB',  '0~1개월',   0  ],
+    [65,  '60',  '1~3개월',   55 ],
+    [75,  '70',  '3~6개월',   65 ],
+    [85,  '80',  '6~12개월',  75 ],
+    [95,  '90',  '1~2세',     85 ],
+    [105, '100', '2~3세',     95 ],
+    [115, '110', '3~5세',     105],
+    [125, '120', '5~7세',     115],
+    [135, '130', '7~8세',     125],
+    [999, '140', '8~9세',     135],
+  ];
+
+  // 신발 — [최대발길이mm, 사이즈(mm), 연령힌트]
+  const SHOE_SIZES = [
+    [95,  '90',  '0~3개월' ],
+    [105, '100', '3~6개월' ],
+    [115, '110', '6~9개월' ],
+    [125, '120', '9~12개월'],
+    [135, '130', '1~2세'   ],
+    [145, '140', '2~3세'   ],
+    [155, '150', '3~4세'   ],
+    [165, '160', '4~6세'   ],
+    [175, '170', '6~7세'   ],
+    [999, '180', '7~9세'   ],
+  ];
+
+  // 양말 — [최소cm, 최대cm, 사이즈, 연령힌트]
+  const SOCK_SIZES = [
+    [0,  11, '소 (S)',    '6개월 미만'],
+    [11, 13, '중 (M)',    '6~12개월'  ],
+    [13, 15, '대 (L)',    '1~3세'     ],
+    [15, 99, '특대 (XL)', '4세 이상'  ],
+  ];
+
+  // 모자 — [최소cm, 최대cm, 사이즈, 연령힌트]
+  const HAT_SIZES = [
+    [0,  40, '38호', '0~3개월' ],
+    [40, 44, '42호', '3~6개월' ],
+    [44, 46, '44호', '6~12개월'],
+    [46, 48, '46호', '1~2세'   ],
+    [48, 50, '50호', '2~4세'   ],
+    [50, 52, '52호', '4~6세'   ],
+    [52, 54, '54호', '6~8세'   ],
+    [54, 99, '56호', '8~9세'   ],
+  ];
+
+  // 브랜드별 의류 사이즈 (한국 표준 → 각 브랜드)
+  const BRAND_TOP = {
+    'NB':  { hm: '50/56',    nike: 'NB~3M',    adidas: '56/62',    zara: '1~3M',   gap: 'NB~3M'   },
+    '60':  { hm: '62/68',    nike: '3~6M',     adidas: '68',       zara: '6M',     gap: '3~6M'    },
+    '70':  { hm: '74/80',    nike: '6~12M',    adidas: '74/80',    zara: '9~12M',  gap: '6~12M'   },
+    '80':  { hm: '86',       nike: '12~18M',   adidas: '86',       zara: '12~18M', gap: '12~18M'  },
+    '90':  { hm: '92/98',    nike: '2T~3T',    adidas: '92/98',    zara: '2Y',     gap: '2T/3T'   },
+    '100': { hm: '104',      nike: '3T~4T',    adidas: '104',      zara: '3~4Y',   gap: '4T/XS'   },
+    '110': { hm: '110/116',  nike: '5/6 (LK)', adidas: '110/116',  zara: '4~5Y',   gap: 'XS'      },
+    '120': { hm: '122/128',  nike: 'XS',       adidas: '122/128',  zara: '6~7Y',   gap: 'S'       },
+    '130': { hm: '128/134',  nike: 'XS/S',     adidas: '134',      zara: '8Y',     gap: 'M (8)'   },
+    '140': { hm: '140',      nike: 'S/M',      adidas: '140',      zara: '9Y',     gap: 'L (10)'  },
+  };
+
+  // 브랜드별 신발 사이즈
+  const BRAND_SHOE = {
+    '90':  { nike: '1C',      adidas: 'EU 16',   zara: '0~3M',   gap: '0~3M'   },
+    '100': { nike: '2C',      adidas: 'EU 17',   zara: '3~6M',   gap: '3~6M'   },
+    '110': { nike: '3C',      adidas: 'EU 18',   zara: '6~9M',   gap: '6~9M'   },
+    '120': { nike: '4C',      adidas: 'EU 19',   zara: '9~12M',  gap: '9~12M'  },
+    '130': { nike: '5C',      adidas: 'EU 20',   zara: '12~18M', gap: '12~18M' },
+    '140': { nike: '6C',      adidas: 'EU 21.5', zara: '18~24M', gap: '18~24M' },
+    '150': { nike: '7C',      adidas: 'EU 23',   zara: '2~3Y',   gap: '2~3Y'   },
+    '160': { nike: '9C',      adidas: 'EU 24.5', zara: '3~4Y',   gap: '3~4Y'   },
+    '170': { nike: '10C',     adidas: 'EU 26',   zara: '5~6Y',   gap: '5~6Y'   },
+    '180': { nike: '11~12C',  adidas: 'EU 27.5', zara: '6~7Y',   gap: '6~7Y'   },
+  };
+
+  // ================================================================
+  //  앱 상태
+  // ================================================================
+  let appState = {
+    gender: null,
+    birthdayStr: '',
+    heightCm: null,
+    weightKg: null,
+    extra: { headCm: null, chestCm: null, waistCm: null, footCm: null }
+  };
+
+  // ================================================================
+  //  핵심 함수
+  // ================================================================
+
+  function calculateAge(birthdayStr) {
+    const birth = new Date(birthdayStr);
+    const now   = new Date();
+    let years  = now.getFullYear() - birth.getFullYear();
+    let months = now.getMonth()    - birth.getMonth();
+    if (months < 0) { years--; months += 12; }
+    return { years, months, totalMonths: years * 12 + months };
+  }
+
+  function interpolateGrowth(totalMonths, gender) {
+    const data    = GROWTH_DATA[gender];
+    const clamped = Math.max(0, Math.min(108, totalMonths));
+    let lo = data[0], hi = data[data.length - 1];
+    for (let i = 0; i < data.length - 1; i++) {
+      if (data[i][0] <= clamped && clamped <= data[i + 1][0]) {
+        lo = data[i]; hi = data[i + 1]; break;
+      }
+    }
+    const t = lo[0] === hi[0] ? 0 : (clamped - lo[0]) / (hi[0] - lo[0]);
+    return {
+      avgHeight: +(lo[1] + t * (hi[1] - lo[1])).toFixed(1),
+      avgWeight: +(lo[2] + t * (hi[2] - lo[2])).toFixed(1),
+      avgHead:   +(lo[3] + t * (hi[3] - lo[3])).toFixed(1),
+    };
+  }
+
+  function estimateBodyMeasurements(heightCm, totalMonths) {
+    const footRatio = totalMonths < 12 ? 0.155 : 0.165;
+    return {
+      footCm:  +(heightCm * footRatio).toFixed(1),
+      chestCm: +(heightCm * (0.50 + totalMonths * 0.0002)).toFixed(1),
+      waistCm: +(heightCm * 0.47).toFixed(1),
+    };
+  }
+
+  function findIndex(chart, value) {
+    for (let i = 0; i < chart.length; i++) {
+      if (value <= chart[i][0]) return i;
+    }
+    return chart.length - 1;
+  }
+
+  function topFitNote(heightCm, idx) {
+    const entry = TOP_SIZES[idx];
+    const prev  = entry[3];
+    const max   = entry[0] === 999 ? prev + 10 : entry[0];
+    const pos   = (heightCm - prev) / (max - prev);
+    if (pos < 0.30) return { label: '조금 클 수 있어요', color: 'amber' };
+    if (pos < 0.75) return { label: '딱 맞아요',        color: 'green' };
+    return               { label: '곧 다음 사이즈',    color: 'blue'  };
+  }
+
+  function getClothingSizes(m) {
+    const topIdx  = findIndex(TOP_SIZES,  m.heightCm);
+    const shoeIdx = findIndex(SHOE_SIZES, m.footCm * 10);
+
+    const topEntry  = TOP_SIZES[topIdx];
+    const shoeEntry = SHOE_SIZES[shoeIdx];
+    const nextTop   = TOP_SIZES[ Math.min(topIdx  + 1, TOP_SIZES.length  - 1)];
+    const nextShoe  = SHOE_SIZES[Math.min(shoeIdx + 1, SHOE_SIZES.length - 1)];
+
+    const sockEntry = SOCK_SIZES.find(([lo, hi]) => m.footCm >= lo && m.footCm < hi)
+                   || SOCK_SIZES[SOCK_SIZES.length - 1];
+    const hatEntry  = HAT_SIZES.find(([lo, hi]) => m.headCm >= lo && m.headCm < hi)
+                   || HAT_SIZES[HAT_SIZES.length - 1];
+
+    return {
+      hat:    { size: hatEntry[2],  hint: hatEntry[3] },
+      top:    { size: topEntry[1],  hint: topEntry[2],  fit: topFitNote(m.heightCm, topIdx), nextSize: nextTop[1]  },
+      bottom: { size: topEntry[1],  hint: topEntry[2],  fit: topFitNote(m.heightCm, topIdx), nextSize: nextTop[1]  },
+      socks:  { size: sockEntry[2], hint: sockEntry[3] },
+      shoes:  { size: shoeEntry[1], hint: shoeEntry[2], nextSize: nextShoe[1] },
+    };
+  }
+
+  function percentileLabel(actual, avg) {
+    const r = actual / avg;
+    if (r < 0.90) return { label: '또래보다 작아요',       bg: 'bg-blue-50',   text: 'text-blue-600',   icon: '&#128201;' };
+    if (r < 0.97) return { label: '평균보다 약간 작아요',  bg: 'bg-sky-50',    text: 'text-sky-600',    icon: '&#128316;' };
+    if (r < 1.03) return { label: '또래 평균이에요',       bg: 'bg-green-50',  text: 'text-green-600',  icon: '&#9989;'   };
+    if (r < 1.10) return { label: '평균보다 약간 커요',    bg: 'bg-orange-50', text: 'text-orange-600', icon: '&#128317;' };
+    return               { label: '또래보다 커요',          bg: 'bg-red-50',    text: 'text-red-500',    icon: '&#128200;' };
+  }
+
+  // ================================================================
+  //  이벤트 핸들러
+  // ================================================================
+
+  function selectGender(gender) {
+    appState.gender = gender;
+    document.body.dataset.gender = gender;
+    const bBoy  = document.getElementById('btn-boy');
+    const bGirl = document.getElementById('btn-girl');
+    const reset  = 'background:white; border-color:#e5e7eb; color:#9ca3af;';
+    const active = 'background:var(--accent-100); border-color:var(--accent-500); color:var(--accent-600);';
+    bBoy.style.cssText  = gender === 'boy'  ? active : reset;
+    bGirl.style.cssText = gender === 'girl' ? active : reset;
+    document.getElementById('gender-error').classList.add('hidden');
+  }
+
+  function onBirthdayInput(val) {
+    const el = document.getElementById('age-display');
+    if (!val) { el.textContent = ''; return; }
+    if (new Date(val) > new Date()) { el.textContent = '&#9888;&#65039; 생년월일이 오늘 이후입니다'; return; }
+    const age = calculateAge(val);
+    if (age.totalMonths > 108) {
+      el.textContent = `생후 ${age.totalMonths}개월 (만 ${age.years}세) — 9세 이하만 지원합니다`;
+    } else if (age.totalMonths === 0) {
+      el.textContent = '생후 1개월 미만 (신생아)';
+    } else {
+      el.textContent = `생후 ${age.totalMonths}개월 (만 ${age.years}세 ${age.months > 0 ? age.months + '개월' : ''})`;
+    }
+  }
+
+  function toggleAccordion() {
+    const c = document.getElementById('accordion-content');
+    const i = document.getElementById('accordion-icon');
+    c.classList.toggle('open');
+    i.style.transform = c.classList.contains('open') ? 'rotate(180deg)' : '';
+  }
+
+  function showErr(id, msg) { const e = document.getElementById(id); e.textContent = msg; e.classList.remove('hidden'); }
+  function hideErr(id)       { document.getElementById(id).classList.add('hidden'); }
+
+  function handleSubmit() {
+    let ok = true;
+
+    if (!appState.gender) { document.getElementById('gender-error').classList.remove('hidden'); ok = false; }
+    else hideErr('gender-error');
+
+    const bday = document.getElementById('input-birthday').value;
+    if (!bday) { showErr('birthday-error', '생년월일을 입력해주세요'); ok = false; }
+    else if (new Date(bday) > new Date()) { showErr('birthday-error', '생년월일이 오늘 이후입니다'); ok = false; }
+    else hideErr('birthday-error');
+
+    const h = parseFloat(document.getElementById('input-height').value);
+    if (!h || h < 40 || h > 160) { showErr('height-error', '키를 정확히 입력해주세요 (40~160cm)'); ok = false; }
+    else hideErr('height-error');
+
+    const w = parseFloat(document.getElementById('input-weight').value);
+    if (!w || w < 2 || w > 60) { showErr('weight-error', '몸무게를 정확히 입력해주세요 (2~60kg)'); ok = false; }
+    else hideErr('weight-error');
+
+    if (!ok) return;
+
+    appState.birthdayStr = bday;
+    appState.heightCm    = h;
+    appState.weightKg    = w;
+    appState.extra = {
+      headCm:  parseFloat(document.getElementById('input-head').value)  || null,
+      chestCm: parseFloat(document.getElementById('input-chest').value) || null,
+      waistCm: parseFloat(document.getElementById('input-waist').value) || null,
+      footCm:  parseFloat(document.getElementById('input-foot').value)  || null,
+    };
+
+    const age    = calculateAge(bday);
+    const growth = interpolateGrowth(age.totalMonths, appState.gender);
+    const est    = estimateBodyMeasurements(h, age.totalMonths);
+
+    const m = {
+      heightCm: h,
+      weightKg: w,
+      headCm:   appState.extra.headCm  || growth.avgHead,
+      footCm:   appState.extra.footCm  || est.footCm,
+      chestCm:  appState.extra.chestCm || est.chestCm,
+      waistCm:  appState.extra.waistCm || est.waistCm,
+      estHead:  !appState.extra.headCm,
+      estFoot:  !appState.extra.footCm,
+    };
+
+    const sizes = getClothingSizes(m);
+    const percH = percentileLabel(h, growth.avgHeight);
+    const percW = percentileLabel(w, growth.avgWeight);
+
+    renderResults({ age, growth, sizes, m, percH, percW });
+
+    document.getElementById('screen-input').classList.add('hidden');
+    document.getElementById('screen-result').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function goBack() {
+    document.getElementById('screen-result').classList.add('hidden');
+    document.getElementById('screen-input').classList.remove('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ================================================================
+  //  렌더 함수
+  // ================================================================
+
+  function renderResults({ age, growth, sizes, m, percH, percW }) {
+    const gLabel   = appState.gender === 'boy' ? '남아 &#128153;' : '여아 &#128151;';
+    const ageLabel = age.totalMonths === 0
+      ? '신생아'
+      : age.totalMonths < 24
+        ? `생후 ${age.totalMonths}개월`
+        : `만 ${age.years}세 ${age.months > 0 ? age.months + '개월' : ''}`;
+
+    document.getElementById('result-hero').innerHTML = `
+      <div class="flex items-start justify-between">
+        <div>
+          <div class="text-sm font-bold mb-0.5" style="color:var(--accent-600);">${gLabel}</div>
+          <div class="text-xs text-gray-500">${ageLabel}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-bold leading-none" style="color:var(--accent-600);">${m.heightCm}<span class="text-base font-normal ml-0.5">cm</span></div>
+          <div class="text-sm text-gray-500 mt-0.5">${m.weightKg} kg</div>
+        </div>
+      </div>
+      <div class="mt-3 pt-3 border-t text-xs text-gray-500" style="border-color:var(--accent-200);">
+        또래 평균: 키 ${growth.avgHeight}cm &middot; 몸무게 ${growth.avgWeight}kg
+      </div>
+    `;
+
+    document.getElementById('result-growth').innerHTML = `
+      <h3 class="text-sm font-bold text-gray-700 mb-3">또래 비교 (KDCA 2017 기준)</h3>
+      <div class="space-y-2.5">
+        ${growthRow('&#128207;', '키',      m.heightCm, 'cm', growth.avgHeight, percH)}
+        ${growthRow('&#9878;&#65039;',  '몸무게', m.weightKg, 'kg', growth.avgWeight, percW)}
+      </div>
+    `;
+
+    const cats = [
+      { icon:'&#129346;', name:'모자',  s: sizes.hat,
+        meas: `머리둘레 ${m.headCm.toFixed(1)}cm${m.estHead ? ' (추정)' : ''}`,
+        brandTop: null, brandShoe: null },
+      { icon:'&#128085;', name:'상의',  s: sizes.top,
+        meas: `키 ${m.heightCm}cm 기준`,
+        brandTop: BRAND_TOP[sizes.top.size], brandShoe: null },
+      { icon:'&#128086;', name:'하의',  s: sizes.bottom,
+        meas: `키 ${m.heightCm}cm 기준`,
+        brandTop: BRAND_TOP[sizes.bottom.size], brandShoe: null },
+      { icon:'&#129510;', name:'양말',  s: sizes.socks,
+        meas: `발길이 ${m.footCm.toFixed(1)}cm${m.estFoot ? ' (추정)' : ''}`,
+        brandTop: null, brandShoe: null },
+      { icon:'&#128095;', name:'신발',  s: sizes.shoes,
+        meas: `발길이 ${m.footCm.toFixed(1)}cm${m.estFoot ? ' (추정)' : ''}`,
+        brandTop: null, brandShoe: BRAND_SHOE[sizes.shoes.size] },
+    ];
+
+    document.getElementById('result-sizes').innerHTML = cats.map(renderSizeCard).join('');
+  }
+
+  function growthRow(icon, label, actual, unit, avg, perc) {
+    return `
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <div class="flex items-center gap-1.5">
+          <span>${icon}</span>
+          <span class="text-sm text-gray-600">${label}</span>
+          <span class="text-xs text-gray-400">${actual}${unit}</span>
+        </div>
+        <span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${perc.bg} ${perc.text} whitespace-nowrap">
+          ${perc.icon} ${perc.label}
+        </span>
+      </div>`;
+  }
+
+  function renderSizeCard({ icon, name, s, meas, brandTop, brandShoe }) {
+    const fitClr = { green: 'bg-green-50 text-green-600', amber: 'bg-amber-50 text-amber-600', blue: 'bg-blue-50 text-blue-600' };
+    const fitBadge = s.fit
+      ? `<span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${fitClr[s.fit.color]}">${s.fit.label}</span>`
+      : '';
+    const nextBadge = s.nextSize
+      ? `<p class="mt-2 text-xs text-amber-600">&#128230; 한 치수 크게 구매 시: <strong>${s.nextSize}${name === '신발' ? 'mm' : ''}</strong></p>`
+      : '';
+    const displaySize = name === '신발' ? `${s.size}mm` : s.size;
+
+    let brandSec = '';
+    if (brandTop) {
+      brandSec = mkBrandBlock([
+        { n: 'H&M',           v: brandTop.hm     },
+        { n: '나이키',         v: brandTop.nike   },
+        { n: '아디다스',       v: brandTop.adidas },
+        { n: '자라',           v: brandTop.zara   },
+        { n: '갭',             v: brandTop.gap    },
+        { n: '유니클로·뉴발란스', v: '한국 표준과 동일' },
+      ]);
+    } else if (brandShoe) {
+      brandSec = mkBrandBlock([
+        { n: '나이키 (US)',    v: brandShoe.nike   },
+        { n: '아디다스 (EU)',  v: brandShoe.adidas },
+        { n: '자라',           v: brandShoe.zara   },
+        { n: '갭',             v: brandShoe.gap    },
+        { n: '유니클로·뉴발란스', v: '한국 mm 동일' },
+      ]);
+    }
+
+    return `
+      <div class="card-enter bg-white rounded-2xl shadow-sm p-4">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">${icon}</span>
+            <span class="text-sm font-bold text-gray-700">${name}</span>
+          </div>
+          ${fitBadge}
+        </div>
+        <div class="flex items-baseline gap-2 mb-0.5">
+          <span class="text-3xl font-bold" style="color:var(--accent-500);">${displaySize}</span>
+          <span class="text-sm text-gray-500">${s.hint}</span>
+        </div>
+        <p class="text-xs text-gray-400">${meas}</p>
+        ${nextBadge}
+        ${brandSec}
+      </div>`;
+  }
+
+  function mkBrandBlock(items) {
+    const tags = items.map(it =>
+      `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 rounded-lg text-xs text-gray-600 border border-gray-100">
+         <strong class="text-gray-700">${it.n}</strong><span class="text-gray-300 mx-0.5">|</span>${it.v}
+       </span>`
+    ).join('');
+    return `
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <p class="text-xs font-medium text-gray-500 mb-2">브랜드별 사이즈</p>
+        <div class="flex flex-wrap gap-1.5">${tags}</div>
+      </div>`;
+  }
+
+  // ================================================================
+  //  초기화
+  // ================================================================
+  window.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    const minD  = new Date();
+    minD.setFullYear(minD.getFullYear() - 9);
+    const bday = document.getElementById('input-birthday');
+    bday.max = today;
+    bday.min = minD.toISOString().split('T')[0];
+
+    document.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('focus', () => { inp.style.borderColor = 'var(--accent-500)'; });
+      inp.addEventListener('blur',  () => { inp.style.borderColor = '#e5e7eb'; });
     });
-    t<dur?requestAnimationFrame(fr):cv.remove();
-  })();
-}
-
-// ── Map ───────────────────────────────
-const MAP=(()=>{
-  let svg,proj,gpath,cpaths,clip,ocean,grat,borders,ring;
-  let W,H;
-  function mg(){return[[10,8],[W-10,H-8]];}
-  async function init(wrap){
-    W=wrap.clientWidth;H=wrap.clientHeight;
-    svg=d3.select('#world-svg').attr('viewBox',`0 0 ${W} ${H}`);
-    proj=d3.geoNaturalEarth1().fitExtent(mg(),{type:'Sphere'});
-    gpath=d3.geoPath().projection(proj);
-    const topo=await d3.json('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json');
-    const defs=svg.append('defs');
-    clip=defs.append('clipPath').attr('id','sc').append('path').datum({type:'Sphere'}).attr('d',gpath);
-    const g=svg.append('g').attr('clip-path','url(#sc)');
-    ocean=g.append('path').datum({type:'Sphere'}).attr('d',gpath).style('fill',OCEAN).attr('pointer-events','none');
-    grat=g.append('path').datum(d3.geoGraticule()()).attr('d',gpath).attr('fill','none').attr('stroke','rgba(255,255,255,.04)').attr('stroke-width','.4').attr('pointer-events','none');
-    const feats=topojson.feature(topo,topo.objects.countries).features.filter(d=>d.id!==10);
-    cpaths=g.selectAll('.cp').data(feats).enter().append('path').attr('class','cp').attr('d',gpath).style('fill',UNSEEN).attr('stroke','rgba(255,255,255,.18)').attr('stroke-width','.4');
-    borders=g.append('path').datum(topojson.mesh(topo,topo.objects.countries,(a,b)=>a!==b)).attr('d',gpath).attr('fill','none').attr('stroke','rgba(255,255,255,.08)').attr('stroke-width','.3').attr('pointer-events','none');
-    ring=svg.append('path').datum({type:'Sphere'}).attr('d',gpath).attr('fill','none').attr('stroke','rgba(100,180,255,.3)').attr('stroke-width','1').attr('pointer-events','none');
-    let t;new ResizeObserver(()=>{clearTimeout(t);t=setTimeout(resize,150);}).observe(wrap);
-  }
-  function resize(){
-    const w=document.getElementById('map-area');W=w.clientWidth;H=w.clientHeight;
-    svg.attr('viewBox',`0 0 ${W} ${H}`);
-    proj.fitExtent(mg(),{type:'Sphere'});
-    [clip,ocean,grat,borders,ring].forEach(el=>el&&el.attr('d',gpath));
-    cpaths&&cpaths.attr('d',gpath);
-  }
-  function flashOk(id,col){
-    const p=cpaths&&cpaths.filter(d=>String(d.id)===id);
-    if(!p||p.empty())return;
-    p.style('fill','#fff');
-    setTimeout(()=>p.transition().duration(600).style('fill',col),100);
-  }
-  function setCur(id){cpaths&&cpaths.classed('cur',d=>String(d.id)===id);}
-  function clearCur(){cpaths&&cpaths.classed('cur',false);}
-  function resetAll(){cpaths&&cpaths.interrupt().style('fill',UNSEEN).classed('cur',false);}
-  return{init,flashOk,setCur,clearCur,resetAll};
-})();
-
-// ── Game State ────────────────────────
-let pname='',qs=[],idx=0,done=new Set(),wrongs=0,locked=false;
-
-function shuf(a){const b=[...a];for(let i=b.length-1;i>0;i--){const j=0|Math.random()*(i+1);[b[i],b[j]]=[b[j],b[i]];}return b;}
-
-function choices(q){return shuf([q,...shuf(COUNTRIES.filter(c=>c.id!==q.id)).slice(0,4)]);}
-
-function startGame(name){
-  pname=name;qs=shuf([...COUNTRIES]);idx=0;done.clear();wrongs=0;locked=false;
-  MAP.resetAll();
-  document.getElementById('h-name').textContent='👤 '+name;
-  updHdr();
-  document.getElementById('gw').style.display='flex';
-  showQ();
-}
-
-function showQ(){
-  locked=false;
-  const q=qs[idx];
-  document.getElementById('q-ctry').textContent=q.name;
-  setFb('','');
-  MAP.setCur(q.id);
-  const grid=document.getElementById('cards');
-  grid.innerHTML='';
-  choices(q).forEach(c=>{
-    const el=document.createElement('div');
-    el.className='card';
-    el.innerHTML=`<div class="ce">${c.emoji}</div><div class="ct">${c.capital}</div>`;
-    el.addEventListener('click',()=>onCard(c,el,q));
-    grid.appendChild(el);
   });
-}
-
-function onCard(choice,el,q){
-  if(locked)return;
-  if(choice.id===q.id){
-    locked=true;
-    el.classList.add('ok');
-    MAP.clearCur();
-    MAP.flashOk(q.id,CC[q.cont]);
-    confetti();
-    setFb(`🎉 정답! ${q.name} → ${q.capital}`,'ok');
-    done.add(q.id);
-    updHdr();
-    setTimeout(()=>{
-      idx++;
-      idx>=qs.length?victory():showQ();
-    },1400);
-  }else{
-    wrongs++;
-    el.classList.add('ng');
-    setFb(`❌ 아쉬워요! 다시 찾아보세요 (${wrongs}/${MAX_WRONG})`,'ng');
-    updHdr();
-    setTimeout(()=>{
-      el.classList.remove('ng');
-      if(wrongs>=MAX_WRONG){locked=true;gameOver();}
-    },650);
-  }
-}
-
-function updHdr(){
-  document.getElementById('h-score').textContent=`정답 ${done.size} / ${COUNTRIES.length}`;
-  document.getElementById('h-wrong').textContent=`❌ ${wrongs} / ${MAX_WRONG}`;
-  document.getElementById('mprog').textContent=`${done.size} / ${COUNTRIES.length} ✅`;
-}
-
-function setFb(txt,cls){
-  const el=document.getElementById('q-fb');
-  el.textContent=txt;el.className=cls;
-}
-
-function gameOver(){
-  MAP.clearCur();
-  document.getElementById('go-ttl').innerHTML=`📚 ${pname}님, 공부해볼까요?`;
-  document.getElementById('go-stat').textContent=`${wrongs}번 틀렸어요 · 맞힌 나라 ${done.size}개 / ${COUNTRIES.length}개`;
-  const list=document.getElementById('ans-list');list.innerHTML='';
-  [...COUNTRIES.filter(c=>done.has(c.id)),...COUNTRIES.filter(c=>!done.has(c.id))].forEach(c=>{
-    const ok=done.has(c.id);
-    const row=document.createElement('div');row.className='ar '+(ok?'ok':'ng');
-    row.innerHTML=`<span>${ok?'✅':'❌'}</span><span class="ar-nm">${c.emoji} ${c.name}</span><span class="ar-arr">→</span><span class="ar-cap">${c.capital}</span>`;
-    list.appendChild(row);
-  });
-  show('scr-go');
-}
-
-function victory(){
-  MAP.clearCur();
-  confetti();setTimeout(confetti,700);
-  document.getElementById('vic-ttl').textContent=`🎉 ${pname}님, 완벽해요!`;
-  document.getElementById('vic-msg').innerHTML=`모든 ${COUNTRIES.length}개 나라의 수도를 다 맞혔어요!<br>당신은 진정한 지리왕이에요! 🌍`;
-  document.getElementById('vic-stat').textContent=`정답 ${COUNTRIES.length}개 · 오답 ${wrongs}회`;
-  show('scr-vic');
-}
-
-function restart(){
-  hide('scr-go');hide('scr-vic');
-  document.getElementById('name-in').value=pname;
-  show('scr-name');
-}
-
-function show(id){document.getElementById(id).classList.remove('hide');}
-function hide(id){document.getElementById(id).classList.add('hide');}
-
-// ── Boot ──────────────────────────────
-(async()=>{
-  try{
-    await MAP.init(document.getElementById('map-area'));
-    hide('scr-load');show('scr-name');
-  }catch(e){
-    console.error(e);
-    document.getElementById('scr-load').innerHTML='<p style="color:#f87171;text-align:center;padding:24px;font-size:14px">지도를 불러올 수 없어요.<br>인터넷 연결을 확인해주세요.<br><button onclick="location.reload()" style="margin-top:12px;padding:10px 22px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:14px;cursor:pointer">다시 시도</button></p>';
-  }
-  const ni=document.getElementById('name-in');
-  document.getElementById('btn-go').addEventListener('click',()=>{
-    const n=ni.value.trim()||'무명 탐험가';
-    hide('scr-name');startGame(n);
-  });
-  ni.addEventListener('keydown',e=>e.key==='Enter'&&document.getElementById('btn-go').click());
-  document.getElementById('btn-retry-go').addEventListener('click',restart);
-  document.getElementById('btn-retry-vic').addEventListener('click',restart);
-})();
-</script>
+  </script>
 </body>
 </html>
